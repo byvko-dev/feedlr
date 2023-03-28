@@ -1,5 +1,9 @@
+# Air
+**/tmp
+
 # Local .env files
 **/.env
 
 # Visual Studio Code
 .vscode
+go.work.sum

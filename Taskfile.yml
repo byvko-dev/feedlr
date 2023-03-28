@@ -1,5 +1,7 @@
 version: "3"
 
+dotenv: [".env"]
+
 tasks:
   prisma-generate:
     desc: Generate Prisma Client
@@ -9,3 +11,17 @@ tasks:
       - go run github.com/prisma/prisma-client-go generate
     status:
       - go run github.com/prisma/prisma-client-go generate --dry-run
+
+  prisma-push:
+    desc: Push Prisma schema to database
+    aliases: [pp]
+    dir: ./prisma
+    cmds:
+      - go run github.com/prisma/prisma-client-go db push
+
+  bot-dev:
+    desc: Run the bot in development mode
+    aliases: [bdev]
+    dir: ./bot
+    cmds:
+      - air
