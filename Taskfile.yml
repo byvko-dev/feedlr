@@ -1,0 +1,11 @@
+version: "3"
+
+tasks:
+  prisma-generate:
+    desc: Generate Prisma Client
+    aliases: [pg]
+    dir: ./prisma
+    cmds:
+      - go run github.com/prisma/prisma-client-go generate
+    status:
+      - go run github.com/prisma/prisma-client-go generate --dry-run

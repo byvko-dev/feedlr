@@ -44,7 +44,8 @@ model Webhook {
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  url String @map("url")
+  name String @map("name")
+  url  String @map("url")
 
   feed   Feed   @relation(fields: [feedId], references: [id])
   feedId String @map("feedId") @db.ObjectId

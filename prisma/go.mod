@@ -1,6 +1,6 @@
 module github.com/byvko-dev/feedlr/prisma
 
-go 1.17
+go 1.20
 
 require (
 	github.com/iancoleman/strcase v0.2.0
@@ -9,3 +9,5 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/takuoki/gocase v1.1.1
 )
+
+require golang.org/x/text v0.4.0 // indirect

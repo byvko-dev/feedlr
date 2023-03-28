@@ -1,6 +1,6 @@
 module github.com/byvko-dev/feedlr
 
-go 1.17
+go 1.20
 
 require (
 	github.com/iancoleman/strcase v0.0.0-20190422225806-e506e3ef7365 // indirect
@@ -8,3 +8,5 @@ require (
 	github.com/takuoki/gocase v1.0.0 // indirect
 	golang.org/x/text v0.4.0 // indirect
 )
+
+replace github.com/byvko-dev/feedlr/prisma/client => ../prisma/client
