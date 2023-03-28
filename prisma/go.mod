@@ -9,5 +9,3 @@ require (
 	github.com/shopspring/decimal v1.3.1
 	github.com/takuoki/gocase v1.1.1
 )
-
-require golang.org/x/text v0.4.0 // indirect

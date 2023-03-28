@@ -1,1 +1,5 @@
+# Local .env files
 **/.env
+
+# Visual Studio Code
+.vscode
