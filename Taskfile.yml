@@ -3,6 +3,12 @@ version: "3"
 dotenv: [".env"]
 
 tasks:
+  prisma:
+    desc: Generates Prisma Client and pushes Prisma schema to database
+    deps:
+      - prisma-generate
+      - prisma-push
+
   prisma-generate:
     desc: Generate Prisma Client
     aliases: [pg]
