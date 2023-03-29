@@ -36,7 +36,7 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 			for _, post := range posts {
 				pendingTasks = append(pendingTasks, tasks.Task{
 					FeedID:     feed.ID,
-					WebhookURL: fmt.Sprintf("%s/webhooks/%s/%s", apiURL, webhook.ID, webhook.Token),
+					WebhookURL: fmt.Sprintf("%s/webhooks/%s/%s", apiURL, webhook.ExternalID, webhook.Token),
 					Post:       post,
 				})
 			}
