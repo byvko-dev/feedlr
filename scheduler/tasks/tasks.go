@@ -4,8 +4,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"sync"
 	"time"
 
+	prisma "github.com/byvko-dev/feedlr/prisma/client"
 	"github.com/byvko-dev/feedlr/scheduler/database"
 	"github.com/byvko-dev/feedlr/scheduler/processing"
 	"github.com/byvko-dev/feedlr/shared/helpers"
@@ -14,6 +16,11 @@ import (
 )
 
 var apiURL = helpers.MustGetEnv("DISCORD_API_URL")
+
+type sliceWithLock[T any] struct {
+	sync.Mutex
+	items []T
+}
 
 func CreateRSSTasks(queue string, postsSince time.Time) {
 	db := database.GetDatabase()
@@ -24,35 +31,56 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 	}
 
 	// Create tasks
-	var pendingTasks []tasks.Task
+	var wg sync.WaitGroup
+	var pendingTasks sliceWithLock[tasks.Task]
 	for _, feed := range feeds {
 		// Skip feeds without webhooks
 		if len(feed.Webhooks()) == 0 {
 			continue
 		}
 
-		posts, err := processing.GetFeedPosts(feed.URL, postsSince)
-		if err != nil {
-			log.Printf("Cannot get feed posts: %v", err)
-			continue
-		}
+		wg.Add(1) // Start goroutine for each feed
+		go func(feed prisma.FeedModel) {
+			defer wg.Done() // Mark feed goroutine as done
 
-		for _, webhook := range feed.Webhooks() {
-			for _, post := range posts {
-				pendingTasks = append(pendingTasks, tasks.Task{
-					FeedID:      feed.ID,
-					WebhookURL:  fmt.Sprintf("%s/webhooks/%s/%s", apiURL, webhook.ExternalID, webhook.Token),
-					WebhookName: webhook.Name,
-					Post:        post,
-				})
+			posts, err := processing.GetFeedPosts(feed.URL, postsSince)
+			if err != nil {
+				log.Printf("Cannot get feed posts: %v", err)
+				return
 			}
-		}
+
+			for _, webhook := range feed.Webhooks() {
+				wg.Add(1) // Start goroutine for each webhook
+				go func(feed prisma.FeedModel, webhook prisma.WebhookModel, posts []tasks.Post) {
+					defer wg.Done() // Mark webhook goroutine as done
+
+					// Create tasks for each post
+					var webhookTasks []tasks.Task
+					for _, post := range posts {
+						task := tasks.Task{
+							FeedID:      feed.ID,
+							WebhookURL:  fmt.Sprintf("%s/webhooks/%s/%s", apiURL, webhook.ExternalID, webhook.Token),
+							WebhookName: webhook.Name,
+							Post:        post,
+						}
+						webhookTasks = append(webhookTasks, task)
+					}
+
+					// Add tasks to pending tasks using lock
+					pendingTasks.Lock()
+					pendingTasks.items = append(pendingTasks.items, webhookTasks...)
+					pendingTasks.Unlock()
+				}(feed, webhook, posts)
+			}
+		}(feed)
 	}
 
-	log.Printf("Creating %d tasks", len(pendingTasks))
+	wg.Wait() // Wait for all feed and webhook goroutines to finish
+
+	log.Printf("Creating %d tasks", len(pendingTasks.items))
 
 	// Send tasks to RabbitMQ
-	for _, task := range pendingTasks {
+	for _, task := range pendingTasks.items {
 		err = newTask(queue, task)
 		if err != nil {
 			log.Printf("Cannot send tasks: %v", err)
