@@ -62,19 +62,22 @@ var (
 				return ctx.Reply("Failed to get channel from Discord")
 			}
 
+			// Webhook name
+			webhookName, _ := getOptionDataValue[string](ctx, "name")
+			if webhookName == "" {
+				webhookName = fmt.Sprintf("RSS from %s", parsed.Host)
+			}
+
 			// Create a webhook for the channel
-			webhook, err := ctx.session.WebhookCreate(channel.ID, fmt.Sprintf("Feedlr - %v", parsed.String()), "")
+			webhook, err := ctx.session.WebhookCreate(channel.ID, fmt.Sprintf("Feedlr - %v (%v)", webhookName, parsed.String()), "")
 			if err != nil {
 				log.Printf("Failed to create webhook: %v", err)
 				return ctx.Reply("Failed to create webhook")
 			}
 
 			// Add the webhook to the feed
-			name, _ := getOptionDataValue[string](ctx, "name")
-			if name == "" {
-				name = fmt.Sprintf("RSS from %s", parsed.Host)
-			}
-			hook, err := db.CreateWebhook(feed.ID, channel.ID, name, webhook.ID, webhook.Token)
+
+			hook, err := db.CreateWebhook(feed.ID, channel.ID, webhookName, webhook.ID, webhook.Token)
 			if err != nil {
 				log.Printf("Failed to add webhook to the database: %v", err)
 				return ctx.Reply("Failed to add webhook to the database")
@@ -159,7 +162,7 @@ var (
 
 			var failedToDelete []string
 			for _, webhook := range webhooks {
-				err = ctx.session.WebhookDelete(webhook.ID)
+				err = ctx.session.WebhookDelete(webhook.ExternalID)
 				if err != nil {
 					log.Printf("Failed to delete webhook: %v", err)
 					failedToDelete = append(failedToDelete, webhook.Name)
