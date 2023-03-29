@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"time"
 )
@@ -16,13 +18,16 @@ func Fetch(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
+	if resp == nil {
+		return nil, errors.New("no response")
+	}
 	defer resp.Body.Close()
 
-	content := make([]byte, resp.ContentLength)
-	_, err = resp.Body.Read(content)
+	// Read the response body
+	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return content, nil
+	return data, nil
 }
