@@ -65,31 +65,24 @@ tasks:
       - (cd ./scheduler && go mod tidy)
       - (cd ./worker && go mod tidy)
 
-  # Build
-  build:
-    desc: Build the bot and backend server
-    deps:
-      - build-bot
-      - build-scheduler
-      - build-worker
-
+  # Build - These tasks are used by Railway
   build-bot:
     desc: Build the bot
     deps:
       - prisma-generate
     cmds:
-      - go build -o bin ./bot/*.go
+      - go build -o bot ./bot/*.go
 
   build-scheduler:
     desc: Build the scheduler service
     deps:
       - prisma-generate
     cmds:
-      - go build -o bin ./scheduler/*.go
+      - go build -o scheduler ./scheduler/*.go
 
   build-worker:
     desc: Build the worker service
     deps:
       - prisma-generate
     cmds:
-      - go build -o bin ./worker/*.go
+      - go build -o worker ./worker/*.go
