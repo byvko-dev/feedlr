@@ -5,6 +5,12 @@ Feedlr is a simple Discord Bot + Backend Services that allow you to add RSS Feed
   
 _This is mostly a proof of concept, and is not intended to be used in production. Feel free to submit an Issue if you want something improved, refactored._
 
+### Features
+- Unlimited feeds per server/channel
+- Simple to use native slash commands
+- Good proxies for fetching feeds and bypassing automate bot detection
+- Extended logic for parsing images (from RSS image tags, from body, from meta tags)
+
 ## Why?
 I wanted to track some RSS feeds on my Discord server and found out that most services are either paid or not very good.
 
