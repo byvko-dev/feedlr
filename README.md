@@ -20,10 +20,11 @@ I wanted to track some RSS feeds on my Discord server and found out that most se
 
 You can also run `task dev` to start both the Discord Bot and the Backend Service in development mode.
 
-### Deployment
-This project is designed to be deployed to Railway (https://railway.app/).
-*Note: Deploying MongoDB in Railway did not work with Prisma (It seems to require a multi-node cluster), though I gave it very little effort. Feel free to submit a PR if you would like to fix this.*
+### Deployment (Railway Template)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/template/-QtOjA)  
+*Note: Deploying MongoDB in Railway did not work with Prisma (It seems to require a multi-node cluster), though I gave it very little effort. Feel free to submit a PR if you would like to fix this.*  
 
+### Deployment (Manual)
 Pre-requisites:
 - Discord Bot Token
 - Railway Account
