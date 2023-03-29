@@ -17,6 +17,9 @@ type DiscordEmbed struct {
 	URL         string `json:"url,omitempty"`
 	Timestamp   string `json:"timestamp,omitempty"`
 	Color       int    `json:"color,omitempty"`
+	Image       struct {
+		URL string `json:"url,omitempty"`
+	} `json:"image,omitempty"`
 }
 type DiscordWebhookPayload struct {
 	Content  string         `json:"content,omitempty"`
@@ -49,6 +52,9 @@ func main() {
 		embed.Description = task.Post.Description
 		embed.URL = task.Post.Link
 		embed.Timestamp = task.Post.PubDate
+		if task.Post.Image != "" {
+			embed.Image.URL = task.Post.Image
+		}
 
 		var data DiscordWebhookPayload
 		data.Embeds = append(data.Embeds, embed)

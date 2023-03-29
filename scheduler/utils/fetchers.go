@@ -9,7 +9,7 @@ import (
 )
 
 func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
-	// Use a custom HTTP client with a timeout
+	// Use a custom HTTP client with a timeout and proxy
 	client := &http.Client{
 		Timeout:   45 * time.Second,
 		Transport: getProxyTransport(),
@@ -32,12 +32,24 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	posts := make([]tasks.Post, 0)
 	for _, item := range feed.Items {
 		if item.PublishedParsed.After(cutoff) {
-			posts = append(posts, tasks.Post{
-				Title:       item.Title,
-				Description: item.Description,
-				Link:        item.Link,
-				PubDate:     item.PublishedParsed.Format(time.RFC3339),
-			})
+			post := tasks.Post{
+				Title:   item.Title,
+				Link:    item.Link,
+				PubDate: item.PublishedParsed.Format(time.RFC3339),
+			}
+
+			// Parse the post's description
+			description, err := parseContent(item.Description, "description")
+			if err != nil {
+				return nil, err
+			}
+			post.Description = description
+
+			// Set the post's image
+			if item.Image != nil {
+				post.Image = item.Image.URL
+			}
+			posts = append(posts, post)
 		}
 	}
 

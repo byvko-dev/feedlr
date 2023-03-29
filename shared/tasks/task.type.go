@@ -10,6 +10,7 @@ type Task struct {
 
 // RSS feed post
 type Post struct {
+	Image       string `json:"image"`
 	Link        string `json:"link"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
