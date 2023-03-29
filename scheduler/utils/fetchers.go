@@ -8,7 +8,7 @@ import (
 func Fetch(url string) ([]byte, error) {
 	// Use a custom HTTP client with a timeout and proxy
 	client := &http.Client{
-		Timeout:   45 * time.Second,
+		Timeout:   15 * time.Second,
 		Transport: getProxyTransport(),
 	}
 
