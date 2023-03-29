@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/byvko-dev/feedlr/scheduler/database"
-	"github.com/byvko-dev/feedlr/scheduler/utils"
+	"github.com/byvko-dev/feedlr/scheduler/processing"
 	"github.com/byvko-dev/feedlr/shared/helpers"
 	"github.com/byvko-dev/feedlr/shared/messaging"
 	"github.com/byvko-dev/feedlr/shared/tasks"
@@ -26,7 +26,7 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 	// Create tasks
 	var pendingTasks []tasks.Task
 	for _, feed := range feeds {
-		posts, err := utils.GetFeedPosts(feed.URL, postsSince)
+		posts, err := processing.GetFeedPosts(feed.URL, postsSince)
 		if err != nil {
 			log.Printf("Cannot get feed posts: %v", err)
 			continue

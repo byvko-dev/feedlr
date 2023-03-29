@@ -1,4 +1,4 @@
-package utils
+package processing
 
 import (
 	"strings"
@@ -36,7 +36,22 @@ func parseContent(content string, converter string) (string, error) {
 
 func findImage(content string) string {
 	p := strings.NewReader(content)
-	doc, _ := goquery.NewDocumentFromReader(p)
+	doc, err := goquery.NewDocumentFromReader(p)
+	if err != nil {
+		return ""
+	}
+
 	img, _ := doc.Find("img").First().Attr("src")
+	return img
+}
+
+func findMetadataImageURL(content string) string {
+	p := strings.NewReader(content)
+	doc, err := goquery.NewDocumentFromReader(p)
+	if err != nil {
+		return ""
+	}
+
+	img, _ := doc.Find("meta[property=\"og:image\"]").First().Attr("content")
 	return img
 }
