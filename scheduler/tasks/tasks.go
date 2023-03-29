@@ -77,6 +77,23 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 
 	wg.Wait() // Wait for all feed and webhook goroutines to finish
 
+	if len(pendingTasks.items) == 0 {
+		log.Printf("No tasks to create from %v feeds\n", len(feeds))
+		return
+	}
+
+	// Update feeds last fetched
+	defer func(items []tasks.Task) {
+		var updatedFeeds []string
+		for _, task := range items {
+			updatedFeeds = append(updatedFeeds, task.FeedID)
+		}
+		err = db.UpdateFeedsLastFetched(updatedFeeds...)
+		if err != nil {
+			log.Printf("Cannot update feeds last fetched: %v", err)
+		}
+	}(pendingTasks.items)
+
 	log.Printf("Creating %d tasks", len(pendingTasks.items))
 
 	// Send tasks to RabbitMQ

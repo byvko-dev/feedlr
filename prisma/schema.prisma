@@ -32,9 +32,10 @@ model Feed {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
+  lastFetch DateTime @default(now()) @map("lastFetch")
 
   url      String    @map("url")
-  webhooks Webhook[] @relation()
+  Webhooks Webhook[] @relation()
 
   @@index([url], name: "url")
   @@map("feeds")

@@ -30,9 +30,21 @@ func (d *Database) Close() {
 func (d *Database) GetAllFeeds() ([]p.FeedModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
+
 	feed, err := d.client.Feed.FindMany().With(p.Feed.Webhooks.Fetch()).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
 	return feed, nil
+}
+
+func (d *Database) UpdateFeedsLastFetched(ids ...string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	_, err := d.client.Feed.FindMany(p.Feed.ID.In(ids)).Update(p.Feed.LastFetch.Set(time.Now())).Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
 }
