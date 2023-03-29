@@ -30,11 +30,14 @@ func init() {
 			return ctx.Reply("Failed to get feed from the database")
 		}
 
+		if len(webhooks) == 0 {
+			return ctx.Reply("This channel is not subscribed to any feeds")
+		}
+
 		var feedNames []string
 		for _, webhook := range webhooks {
 			feedNames = append(feedNames, fmt.Sprintf("%s (%s)", webhook.Name, webhook.Feed().URL))
 		}
-
 		return ctx.Reply(fmt.Sprintf("This channel is subscribed to %d feeds\n```%s```", len(feedNames), strings.Join(feedNames, "\n")))
 	})
 }
