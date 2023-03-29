@@ -69,7 +69,7 @@ var (
 			}
 
 			// Create a webhook for the channel
-			webhook, err := ctx.session.WebhookCreate(channel.ID, fmt.Sprintf("Feedlr - %v (%v)", webhookName, parsed.String()), "")
+			webhook, err := ctx.session.WebhookCreate(channel.ID, fmt.Sprintf("Feedlr - %v", webhookName), ctx.session.State.User.AvatarURL(""))
 			if err != nil {
 				log.Printf("Failed to create webhook: %v", err)
 				return ctx.Reply("Failed to create webhook")
