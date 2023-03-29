@@ -5,12 +5,14 @@ import (
 
 	"github.com/byvko-dev/feedlr/shared/tasks"
 	"github.com/mmcdole/gofeed"
+	"golang.org/x/net/context"
 )
 
 func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	fp := gofeed.NewParser()
-	fp.Client.Timeout = 15 * time.Second
-	feed, err := fp.ParseURL(feedURL)
+	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+	defer cancel()
+	feed, err := fp.ParseURLWithContext(feedURL, ctx)
 	if err != nil {
 		return nil, err
 	}
