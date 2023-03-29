@@ -29,10 +29,10 @@ model Guild {
 }
 
 model Feed {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  updatedAt DateTime @updatedAt @map("updatedAt")
-  createdAt DateTime @default(now()) @map("createdAt")
-  lastFetch DateTime @default(now()) @map("lastFetch") // This will also update the updatedAt field
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  updatedAt DateTime  @updatedAt @map("updatedAt")
+  createdAt DateTime  @default(now()) @map("createdAt")
+  lastFetch DateTime? @map("lastFetch") // This will also update the updatedAt field
 
   url      String    @map("url")
   Webhooks Webhook[] @relation()
