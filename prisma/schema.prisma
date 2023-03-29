@@ -21,7 +21,7 @@ model Guild {
 
   name String @map("name")
 
-  webhooks Webhook[] @relation()
+  Webhooks Webhook[] @relation()
 
   @@index([name], name: "name")
   @@index([featureFlags], name: "featureFlags")
@@ -53,8 +53,8 @@ model Webhook {
   guildId   String @map("guildId")
   Guild     Guild  @relation(fields: [guildId], references: [id])
 
-  feed   Feed   @relation(fields: [feedId], references: [id])
   feedId String @map("feedId") @db.ObjectId
+  Feed   Feed   @relation(fields: [feedId], references: [id])
 
   @@index([feedId], name: "feedId")
   @@index([channelId], name: "channelId")
