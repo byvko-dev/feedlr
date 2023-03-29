@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"fmt"
@@ -6,45 +6,12 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-type Context struct {
-	session *discordgo.Session
-	data    *discordgo.InteractionCreate
-}
-
-func (c Context) Guild() (*discordgo.Guild, error) {
-	return c.session.Guild(c.data.GuildID)
-}
-
-func (c Context) Channel() (*discordgo.Channel, error) {
-	return c.session.Channel(c.data.ChannelID)
-}
-
-// Send a message to the channel where the command was invoked
-func (c Context) Reply(content string) error {
-	return s.InteractionRespond(c.data.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content: content,
-		},
-	})
-}
-
-// Send an embed to the channel where the command was invoked
-func (c Context) ReplyEmbeds(embeds ...*discordgo.MessageEmbed) error {
-	return s.InteractionRespond(c.data.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Embeds: embeds,
-		},
-	})
-}
-
 /*
 Returns the value of an option with the given name, or false if the option is not present
 
 This function cannot be a method on the Context struct because it has a type parameter
 */
-func getOptionDataValue[T any](ctx Context, name string) (T, bool) {
+func GetOptionDataValue[T any](ctx Context, name string) (T, bool) {
 	opts := ctx.data.ApplicationCommandData().Options
 	if opts == nil {
 		return *new(T), false

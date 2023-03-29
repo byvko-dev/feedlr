@@ -1,4 +1,4 @@
-package main
+package router
 
 import (
 	"fmt"
@@ -8,8 +8,20 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func Handle(handler func(ctx Context) error, middleware ...func(ctx Context) bool) func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-	return func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+var commandHandlers = map[string]func(s *discordgo.Session, i *discordgo.InteractionCreate){}
+
+func RegisterHandlers(s *discordgo.Session) {
+	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
+		if discordgo.InteractionApplicationCommand == i.Type {
+			if h, ok := commandHandlers[i.ApplicationCommandData().Name]; ok {
+				h(s, i)
+			}
+		}
+	})
+}
+
+func Handler(name string, handler func(ctx Context) error, middleware ...func(ctx Context) bool) {
+	commandHandlers[name] = func(s *discordgo.Session, i *discordgo.InteractionCreate) {
 		// Recover from panics
 		defer func() {
 			if r := recover(); r != nil {

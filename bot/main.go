@@ -7,12 +7,17 @@ import (
 
 	"github.com/bwmarrin/discordgo"
 	helpers "github.com/byvko-dev/feedlr/shared/helpers"
+
+	_ "github.com/byvko-dev/feedlr/bot/commands/handlers" // Register command handlers
+	_ "github.com/byvko-dev/feedlr/bot/commands/options"  // Register command options
+
+	"github.com/byvko-dev/feedlr/bot/database"
+	"github.com/byvko-dev/feedlr/bot/router"
 )
 
 // Bot parameters
 var (
 	GuildID         = helpers.GetEnv("GUILD_ID", "")                       // Test guild ID. If not passed - bot registers commands globally
-	RemoveCommands  = helpers.GetEnv("REMOVE_COMMANDS", "false") == "true" // Remove all commands after shutdowning or not
 	CleanupCommands = helpers.GetEnv("CLEANUP_COMMANDS", "true") == "true" // Remove all commands before registering new ones
 )
 
@@ -24,14 +29,11 @@ func init() {
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
 	}
-
-	// Register command handlers
-	registerHandlers()
 }
 
 func main() {
-	db.Connect() // Connect to the database
-	defer db.Close()
+	database.Client.Connect() // Connect to the database
+	defer database.Client.Close()
 
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
@@ -40,49 +42,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("Cannot open the session: %v", err)
 	}
-
-	if CleanupCommands {
-		log.Println("Cleaning up commands...")
-		// Remove all commands
-		commands, err := s.ApplicationCommands(s.State.User.ID, GuildID)
-		if err != nil {
-			log.Panicf("Cannot get commands: %v", err)
-		}
-		for _, v := range commands {
-			err := s.ApplicationCommandDelete(s.State.User.ID, GuildID, v.ID)
-			if err != nil {
-				log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
-			}
-		}
-	}
-
-	log.Println("Adding commands...")
-	registeredCommands := make([]*discordgo.ApplicationCommand, len(commands))
-	for i, v := range commands {
-		cmd, err := s.ApplicationCommandCreate(s.State.User.ID, GuildID, v)
-		if err != nil {
-			log.Panicf("Cannot create '%v' command: %v", v.Name, err)
-		}
-		registeredCommands[i] = cmd
-	}
-
 	defer s.Close()
+
+	// Register command handlers
+	router.RegisterCommandOptions(s, GuildID, CleanupCommands)
+	router.RegisterHandlers(s)
 
 	stop := make(chan os.Signal, 1)
 	signal.Notify(stop, os.Interrupt)
 	log.Println("Press Ctrl+C to exit")
 	<-stop
-
-	if RemoveCommands {
-		log.Println("Removing commands...")
-		for _, v := range registeredCommands {
-			// Only remove commands that were created by this bot
-			err := s.ApplicationCommandDelete(s.State.User.ID, GuildID, v.ID)
-			if err != nil {
-				log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
-			}
-		}
-	}
 
 	log.Println("Gracefully shutting down.")
 }

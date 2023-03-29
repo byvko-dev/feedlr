@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"context"
@@ -12,7 +12,7 @@ type Database struct {
 	client *p.PrismaClient
 }
 
-var db = &Database{
+var Client = &Database{
 	client: p.NewClient(),
 }
 
@@ -159,7 +159,7 @@ func (d *Database) FindWebhooksByChannelID(id string) ([]p.WebhookModel, error) 
 	defer cancel()
 	webhooks, err := d.client.Webhook.FindMany(
 		p.Webhook.ChannelID.Equals(id),
-	).Exec(ctx)
+	).With(p.Webhook.Feed.Fetch()).Exec(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -172,6 +172,16 @@ func (d *Database) DeleteWebhooksByChannelID(id string) error {
 	_, err := d.client.Webhook.FindMany(
 		p.Webhook.ChannelID.Equals(id),
 	).Delete().Exec(ctx)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (d *Database) DeleteWebhook(id string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+	_, err := d.client.Webhook.FindUnique(p.Webhook.ID.Equals(id)).Delete().Exec(ctx)
 	if err != nil {
 		return err
 	}

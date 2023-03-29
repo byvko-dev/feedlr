@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"fmt"
@@ -10,7 +10,7 @@ import (
 
 var validatorURL = helpers.MustGetEnv("RSS_VALIDATOR_URL")
 
-func validateFeed(feedURL *url.URL) bool {
+func ValidateFeed(feedURL *url.URL) bool {
 	feedURL.Scheme = "https" // Force HTTPS
 	resp, err := http.Get(fmt.Sprintf(validatorURL, feedURL.String()))
 	if err != nil {
