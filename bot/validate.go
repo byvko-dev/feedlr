@@ -3,14 +3,16 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"net/url"
 
 	helpers "github.com/byvko-dev/feedlr/shared/helpers"
 )
 
 var validatorURL = helpers.MustGetEnv("RSS_VALIDATOR_URL")
 
-func validateFeed(url string) bool {
-	resp, err := http.Get(fmt.Sprintf(validatorURL, url))
+func validateFeed(feedURL url.URL) bool {
+	feedURL.Scheme = "https" // Force HTTPS
+	resp, err := http.Get(fmt.Sprintf(validatorURL, feedURL.String()))
 	if err != nil {
 		return false
 	}

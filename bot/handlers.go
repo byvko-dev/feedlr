@@ -26,7 +26,7 @@ var (
 			}
 
 			// Validate the feed
-			if !validateFeed(parsed.String()) {
+			if !validateFeed(parsed) {
 				return ctx.Reply("This is not a valid RSS feed")
 			}
 
