@@ -12,13 +12,13 @@ import (
 func getProxyTransport() *http.Transport {
 	proxyURL := helpers.GetEnv("PROXY_URL", "")
 	if proxyURL == "" {
-		return nil
+		return &http.Transport{}
 	}
 
 	parsedURL, err := url.Parse(proxyURL)
 	if err != nil {
 		log.Printf("Failed to parse proxy URL: %v\n", err)
-		return nil
+		return &http.Transport{}
 	}
 
 	transport := &http.Transport{

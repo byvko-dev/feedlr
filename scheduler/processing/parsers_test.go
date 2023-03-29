@@ -1,41 +1,41 @@
 package processing
 
 import (
+	"encoding/json"
 	"log"
-	"time"
+	"testing"
 
 	"github.com/byvko-dev/feedlr/scheduler/utils"
-	"github.com/byvko-dev/feedlr/shared/tasks"
 	"github.com/mmcdole/gofeed"
 )
 
-func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
+func TestParseFeedItems(t *testing.T) {
+	feedURL := "https://nitter.net/CNN/rss"
+
 	data, err := utils.Fetch(feedURL)
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 
-	// Parse the feed
 	fp := gofeed.NewParser()
 	feed, err := fp.ParseString(string(data))
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 
 	// Filter out posts that are older than the cutoff
 	var items []gofeed.Item
-	for _, item := range feed.Items {
-		if item.PublishedParsed.After(cutoff) {
-			items = append(items, *item)
-		}
-	}
+	items = append(items, *feed.Items[0])
 
 	posts, err := feedItemsToPosts(items)
 	if err != nil {
-		return nil, err
+		t.Fatal(err)
 	}
 
-	log.Printf("Found %d posts for %s", len(posts), feedURL)
+	bytes, err := json.MarshalIndent(posts, "", "  ")
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	return posts, nil
+	log.Println(string(bytes))
 }
