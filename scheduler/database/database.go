@@ -1,4 +1,4 @@
-package main
+package database
 
 import (
 	"context"
@@ -13,6 +13,10 @@ type Database struct {
 
 var db = &Database{
 	client: p.NewClient(),
+}
+
+func GetDatabase() *Database {
+	return db
 }
 
 func (d *Database) Connect() error {

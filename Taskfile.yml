@@ -45,14 +45,14 @@ tasks:
   scheduler-dev:
     desc: Run the scheduler service in development mode
     aliases: [sdev]
-    dir: ./backend
+    dir: ./scheduler
     cmds:
       - air
 
   worker-dev:
     desc: Run the worker service in development mode
     aliases: [wdev]
-    dir: ./backend
+    dir: ./worker
     cmds:
       - air
 
