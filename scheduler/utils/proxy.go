@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"crypto/tls"
 	"log"
 	"net/http"
 	"net/url"
@@ -8,15 +9,21 @@ import (
 	"github.com/byvko-dev/feedlr/shared/helpers"
 )
 
-func getProxy() func(*http.Request) (*url.URL, error) {
+func getProxyTransport() *http.Transport {
 	proxyURL := helpers.GetEnv("PROXY_URL", "")
 	if proxyURL == "" {
 		return nil
 	}
+
 	parsedURL, err := url.Parse(proxyURL)
 	if err != nil {
 		log.Printf("Failed to parse proxy URL: %v\n", err)
 		return nil
 	}
-	return http.ProxyURL(parsedURL)
+
+	transport := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		Proxy:           http.ProxyURL(parsedURL),
+	}
+	return transport
 }

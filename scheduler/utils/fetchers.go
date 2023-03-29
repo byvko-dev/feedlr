@@ -11,10 +11,8 @@ import (
 func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	// Use a custom HTTP client with a timeout
 	client := &http.Client{
-		Timeout: 45 * time.Second,
-		Transport: &http.Transport{
-			Proxy: getProxy(),
-		},
+		Timeout:   45 * time.Second,
+		Transport: getProxyTransport(),
 	}
 
 	resp, err := client.Get(feedURL)
