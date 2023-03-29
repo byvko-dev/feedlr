@@ -7,10 +7,11 @@ import (
 
 	"github.com/byvko-dev/feedlr/scheduler/utils"
 	"github.com/mmcdole/gofeed"
+	"github.com/stretchr/testify/assert"
 )
 
 func TestParseFeedItems(t *testing.T) {
-	feedURL := "https://nitter.net/CNN/rss"
+	feedURL := "https://openai.com/blog/rss.xml"
 
 	data, err := utils.Fetch(feedURL)
 	if err != nil {
@@ -31,6 +32,8 @@ func TestParseFeedItems(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	assert.Equal(t, 1, len(posts))
 
 	bytes, err := json.MarshalIndent(posts, "", "  ")
 	if err != nil {

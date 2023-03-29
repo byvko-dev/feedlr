@@ -75,7 +75,12 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		if err != nil {
 			return nil, err
 		}
-		post.Description = description
+
+		if description != item.Title || item.Content == "" {
+			post.Description = description
+		} else {
+			post.Description = item.Content
+		}
 
 		// Set the post's image
 		if img := findImage(item.Description + " " + item.Content); img != "" { // Check post description, this is likely a thumbnail
