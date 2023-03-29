@@ -48,6 +48,8 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 			// Set the post's image
 			if item.Image != nil {
 				post.Image = item.Image.URL
+			} else {
+				post.Image = findImage(item.Description)
 			}
 			posts = append(posts, post)
 		}

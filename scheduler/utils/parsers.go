@@ -1,6 +1,8 @@
 package utils
 
 import (
+	"strings"
+
 	md "github.com/JohannesKaufmann/html-to-markdown"
 	"github.com/PuerkitoBio/goquery"
 )
@@ -30,4 +32,11 @@ func parseContent(content string, converter string) (string, error) {
 		return content, nil
 	}
 	return converters[converter].ConvertString(content)
+}
+
+func findImage(content string) string {
+	p := strings.NewReader(content)
+	doc, _ := goquery.NewDocumentFromReader(p)
+	img, _ := doc.Find("img").First().Attr("src")
+	return img
 }
