@@ -26,7 +26,7 @@ func init() {
 }
 
 func parseContent(content string, converter string) (string, error) {
-	if converter == "" {
+	if converter == "" || converters[converter] == nil {
 		return content, nil
 	}
 	return converters[converter].ConvertString(content)
