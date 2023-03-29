@@ -16,8 +16,8 @@ I wanted to track some RSS feeds on my Discord server and found out that most se
 
 ### Development
 1. Run `task prisma` to build the Prisma Client and push the Prisma Schema to your database
-2. Run `task bot-dev` to start the Discord Bot in development mode
-3. Run `task server-dev` to start the Backend Service in development mode
+2. Run `task scheduler-dev` to start the Discord Bot in development mode
+3. Run `task worker-dev` to start the Backend Service in development mode
 
 You can also run `task dev` to start both the Discord Bot and the Backend Service in development mode.
 
