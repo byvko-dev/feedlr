@@ -41,7 +41,7 @@ func findImage(content string) string {
 		return ""
 	}
 
-	img, _ := doc.Find("img").First().Attr("src")
+	img, _ := doc.Find("img[src]").First().Attr("src")
 	return img
 }
 

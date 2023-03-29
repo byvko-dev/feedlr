@@ -61,11 +61,13 @@ func main() {
 		data.Username = task.WebhookName
 
 		// Convert the payload to JSON
-		payload, err := json.Marshal(data)
+		payload, err := json.MarshalIndent(data, "", "  ")
 		if err != nil {
 			log.Printf("Failed to marshal payload for feed %v: %v", task.FeedID, err)
 			return
 		}
+
+		log.Printf("Creating a post for feed %v\n%v", task.FeedID, string(payload))
 
 		// Send the payload to Discord
 		res, err := http.Post(task.WebhookURL, "application/json", bytes.NewBuffer(payload))

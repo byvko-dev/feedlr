@@ -40,7 +40,7 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 			post.Description = description
 
 			// Set the post's image
-			if img := findImage(item.Description); img != "" { // Check post description, this is likely a thumbnail
+			if img := findImage(item.Description + " " + item.Content); img != "" { // Check post description, this is likely a thumbnail
 				post.Image = img
 			} else if item.Image != nil && item.Image.URL != "" { // Check item image, this is likely an avatar
 				post.Image = item.Image.URL
