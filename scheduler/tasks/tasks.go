@@ -26,6 +26,11 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 	// Create tasks
 	var pendingTasks []tasks.Task
 	for _, feed := range feeds {
+		// Skip feeds without webhooks
+		if len(feed.Webhooks()) == 0 {
+			continue
+		}
+
 		posts, err := processing.GetFeedPosts(feed.URL, postsSince)
 		if err != nil {
 			log.Printf("Cannot get feed posts: %v", err)
