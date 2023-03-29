@@ -1,17 +1,17 @@
-package main
+package helpers
 
 import (
 	"os"
 )
 
-func getEnv(key, fallback string) string {
+func GetEnv(key, fallback string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}
 	return fallback
 }
 
-func mustGetEnv(key string) string {
+func MustGetEnv(key string) string {
 	if value, ok := os.LookupEnv(key); ok {
 		return value
 	}

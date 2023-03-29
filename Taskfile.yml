@@ -3,6 +3,7 @@ version: "3"
 dotenv: [".env"]
 
 tasks:
+  # Prisma
   prisma:
     desc: Generates Prisma Client and pushes Prisma schema to database
     deps:
@@ -25,9 +26,70 @@ tasks:
     cmds:
       - go run github.com/prisma/prisma-client-go db push
 
+  # Bot and backend server
+  dev:
+    desc: Run the bot and backend server in development mode
+    aliases: [dev]
+    deps:
+      - bot-dev
+      - scheduler-dev
+      - worker-dev
+
   bot-dev:
     desc: Run the bot in development mode
     aliases: [bdev]
     dir: ./bot
     cmds:
       - air
+
+  scheduler-dev:
+    desc: Run the scheduler service in development mode
+    aliases: [sdev]
+    dir: ./backend
+    cmds:
+      - air
+
+  worker-dev:
+    desc: Run the worker service in development mode
+    aliases: [wdev]
+    dir: ./backend
+    cmds:
+      - air
+
+  # Helpers
+  tidy:
+    desc: Run go mod tidy
+    cmds:
+      - (cd ./bot && go mod tidy)
+      - (cd ./prisma && go mod tidy)
+      - (cd ./scheduler && go mod tidy)
+      - (cd ./worker && go mod tidy)
+
+  # Build
+  build:
+    desc: Build the bot and backend server
+    deps:
+      - build-bot
+      - build-scheduler
+      - build-worker
+
+  build-bot:
+    desc: Build the bot
+    deps:
+      - prisma-generate
+    cmds:
+      - go build -o bin ./bot/*.go
+
+  build-scheduler:
+    desc: Build the scheduler service
+    deps:
+      - prisma-generate
+    cmds:
+      - go build -o bin ./scheduler/*.go
+
+  build-worker:
+    desc: Build the worker service
+    deps:
+      - prisma-generate
+    cmds:
+      - go build -o bin ./worker/*.go

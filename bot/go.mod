@@ -1,12 +1,15 @@
-module github.com/byvko-dev/feedlr
+module github.com/byvko-dev/feedlr/bot
 
 go 1.20
 
 replace github.com/byvko-dev/feedlr/prisma => ../prisma
 
+replace github.com/byvko-dev/feedlr/shared => ../shared
+
 require (
 	github.com/bwmarrin/discordgo v0.27.1
 	github.com/byvko-dev/feedlr/prisma v0.0.0-00010101000000-000000000000
+	github.com/byvko-dev/feedlr/shared v0.0.0-00010101000000-000000000000
 )
 
 require (

@@ -6,19 +6,20 @@ import (
 	"os/signal"
 
 	"github.com/bwmarrin/discordgo"
+	helpers "github.com/byvko-dev/feedlr/shared/helpers"
 )
 
 // Bot parameters
 var (
-	GuildID        = getEnv("GUILD_ID", "")                  // Test guild ID. If not passed - bot registers commands globally
-	RemoveCommands = mustGetEnv("REMOVE_COMMANDS") == "true" // Remove all commands after shutdowning or not
+	GuildID        = helpers.GetEnv("GUILD_ID", "")                  // Test guild ID. If not passed - bot registers commands globally
+	RemoveCommands = helpers.MustGetEnv("REMOVE_COMMANDS") == "true" // Remove all commands after shutdowning or not
 )
 
 var s *discordgo.Session
 
 func init() {
 	var err error
-	s, err = discordgo.New("Bot " + mustGetEnv("DISCORD_TOKEN"))
+	s, err = discordgo.New("Bot " + helpers.MustGetEnv("DISCORD_TOKEN"))
 	if err != nil {
 		log.Fatalf("Invalid bot parameters: %v", err)
 	}
@@ -29,6 +30,7 @@ func init() {
 
 func main() {
 	db.Connect() // Connect to the database
+	defer db.Close()
 
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
@@ -65,9 +67,6 @@ func main() {
 			}
 		}
 	}
-
-	log.Println("Closing database connection...")
-	db.Close()
 
 	log.Println("Gracefully shutting down.")
 }
