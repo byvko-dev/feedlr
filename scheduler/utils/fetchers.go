@@ -21,7 +21,7 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 				Title:       item.Title,
 				Description: item.Description,
 				Link:        item.Link,
-				PubDate:     item.Published,
+				PubDate:     item.PublishedParsed.Format(time.RFC3339),
 			})
 		}
 	}
