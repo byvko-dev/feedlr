@@ -71,18 +71,18 @@ tasks:
     deps:
       - prisma-generate
     cmds:
-      - go build -o bot ./bot/*.go
+      - go build -o bin/bot ./bot/*.go
 
   build-scheduler:
     desc: Build the scheduler service
     deps:
       - prisma-generate
     cmds:
-      - go build -o scheduler ./scheduler/*.go
+      - go build -o bin/scheduler ./scheduler/*.go
 
   build-worker:
     desc: Build the worker service
     deps:
       - prisma-generate
     cmds:
-      - go build -o worker ./worker/*.go
+      - go build -o bin/worker ./worker/*.go
