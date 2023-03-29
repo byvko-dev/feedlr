@@ -1,18 +1,26 @@
 package utils
 
 import (
+	"net/http"
 	"time"
 
 	"github.com/byvko-dev/feedlr/shared/tasks"
 	"github.com/mmcdole/gofeed"
-	"golang.org/x/net/context"
 )
 
 func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
+	// Use a custom HTTP client with a timeout
+	client := &http.Client{
+		Timeout: 45 * time.Second,
+	}
+	resp, err := client.Get(feedURL)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
 	fp := gofeed.NewParser()
-	ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-	defer cancel()
-	feed, err := fp.ParseURLWithContext(feedURL, ctx)
+	feed, err := fp.Parse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
