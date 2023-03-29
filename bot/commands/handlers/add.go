@@ -46,7 +46,7 @@ func init() {
 		}
 
 		// Get feed from the database
-		feed, err := database.Client.GetOrCreateFeed(guild.ID, parsed.String())
+		feed, err := database.Client.GetOrCreateFeed(parsed.String())
 		if err != nil {
 			log.Printf("Failed to get feed from the database: %v", err)
 			return ctx.Reply("Failed to get feed from the database")
@@ -73,7 +73,7 @@ func init() {
 
 		// Add the webhook to the feed
 
-		hook, err := database.Client.CreateWebhook(feed.ID, channel.ID, webhookName, webhook.ID, webhook.Token)
+		hook, err := database.Client.CreateWebhook(feed.ID, guild.ID, channel.ID, webhookName, webhook.ID, webhook.Token)
 		if err != nil {
 			log.Printf("Failed to add webhook to the database: %v", err)
 			return ctx.Reply("Failed to add webhook to the database")

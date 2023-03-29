@@ -71,11 +71,10 @@ func (d *Database) GetOrCreateGuild(id string, name string) (*p.GuildModel, erro
 	return guild, nil
 }
 
-func (d *Database) CreateFeed(guildID string, url string) (*p.FeedModel, error) {
+func (d *Database) CreateFeed(url string) (*p.FeedModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	feed, err := d.client.Feed.CreateOne(
-		p.Feed.Guild.Link(p.Guild.ID.Equals(guildID)),
 		p.Feed.URL.Set(url),
 	).With(p.Feed.Webhooks.Fetch()).Exec(ctx)
 	if err != nil {
@@ -104,11 +103,10 @@ func (d *Database) GetManyFeeds(ids []string) ([]p.FeedModel, error) {
 	return feeds, nil
 }
 
-func (d *Database) FindFeedByURL(guildID, url string) (*p.FeedModel, error) {
+func (d *Database) FindFeedByURL(url string) (*p.FeedModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	feed, err := d.client.Feed.FindFirst(
-		p.Feed.GuildID.Equals(guildID),
 		p.Feed.URL.Equals(url),
 	).With(p.Feed.Webhooks.Fetch()).Exec(ctx)
 	if err != nil {
@@ -117,25 +115,26 @@ func (d *Database) FindFeedByURL(guildID, url string) (*p.FeedModel, error) {
 	return feed, nil
 }
 
-func (d *Database) GetOrCreateFeed(guildID string, url string) (*p.FeedModel, error) {
-	feed, err := d.FindFeedByURL(guildID, url)
+func (d *Database) GetOrCreateFeed(url string) (*p.FeedModel, error) {
+	feed, err := d.FindFeedByURL(url)
 	if err != nil {
 		if errors.Is(err, p.ErrNotFound) {
-			return d.CreateFeed(guildID, url)
+			return d.CreateFeed(url)
 		}
 		return nil, err
 	}
 	return feed, nil
 }
 
-func (d *Database) CreateWebhook(feedID, channelID, name, id, token string) (*p.WebhookModel, error) {
+func (d *Database) CreateWebhook(feedID, guildD, channelID, name, id, token string) (*p.WebhookModel, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 	webhook, err := d.client.Webhook.CreateOne(
 		p.Webhook.Name.Set(name),
 		p.Webhook.Token.Set(token),
-		p.Webhook.ChannelID.Set(channelID),
 		p.Webhook.ExternalID.Set(id),
+		p.Webhook.ChannelID.Set(channelID),
+		p.Webhook.Guild.Link(p.Guild.ID.Equals(guildD)),
 		p.Webhook.Feed.Link(p.Feed.ID.Equals(feedID)),
 	).Exec(ctx)
 	if err != nil {

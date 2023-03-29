@@ -19,8 +19,9 @@ model Guild {
   isPremium    Boolean  @default(false) @map("isPremium")
   featureFlags String[] @map("featureFlags")
 
-  name  String @map("name")
-  feeds Feed[]
+  name String @map("name")
+
+  webhooks Webhook[] @relation()
 
   @@index([name], name: "name")
   @@index([featureFlags], name: "featureFlags")
@@ -32,14 +33,10 @@ model Feed {
   createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
 
-  guildId String @map("guildId")
-  Guild   Guild  @relation(fields: [guildId], references: [id])
-
   url      String    @map("url")
   webhooks Webhook[] @relation()
 
   @@index([url], name: "url")
-  @@index([guildId], name: "guildId")
   @@map("feeds")
 }
 
@@ -50,13 +47,17 @@ model Webhook {
 
   name       String @map("name")
   token      String @map("token")
-  channelId  String @map("channelId")
   externalId String @map("externalId")
+
+  channelId String @map("channelId")
+  guildId   String @map("guildId")
+  Guild     Guild  @relation(fields: [guildId], references: [id])
 
   feed   Feed   @relation(fields: [feedId], references: [id])
   feedId String @map("feedId") @db.ObjectId
 
   @@index([feedId], name: "feedId")
   @@index([channelId], name: "channelId")
+  @@index([guildId], name: "guildId")
   @@map("webhooks")
 }
