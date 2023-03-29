@@ -68,7 +68,7 @@ func main() {
 		defer res.Body.Close()
 
 		// Decode the response
-		var response DiscordWebhookResponse
+		var response map[string]any
 		err = json.NewDecoder(res.Body).Decode(&response)
 		if err != nil {
 			log.Printf("Failed to decode response for feed %v: %v", task.FeedID, err)
@@ -76,8 +76,8 @@ func main() {
 		}
 
 		// Check the response
-		if response.Message != "" {
-			log.Printf("Failed to POST webhook for feed %v: %v", task.FeedID, response.Message)
+		if response["message"] != "" {
+			log.Printf("Failed to POST webhook for feed %v: %v\n%+v", task.FeedID, response["message"], response)
 			return
 		}
 		if res.StatusCode != 204 {
