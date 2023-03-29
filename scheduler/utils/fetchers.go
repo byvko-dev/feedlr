@@ -9,6 +9,7 @@ import (
 
 func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	fp := gofeed.NewParser()
+	fp.Client.Timeout = 15 * time.Second
 	feed, err := fp.ParseURL(feedURL)
 	if err != nil {
 		return nil, err
