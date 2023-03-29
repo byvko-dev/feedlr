@@ -16,6 +16,11 @@ func init() {
 			Filter:      []string{"img"},
 			Replacement: func(_ string, _ *goquery.Selection, _ *md.Options) *string { return md.String("") },
 		},
+		md.Rule{
+			// Remove links
+			Filter:      []string{"a"},
+			Replacement: func(content string, _ *goquery.Selection, _ *md.Options) *string { return md.String(content) },
+		},
 	)
 	converters["description"] = converter
 }
