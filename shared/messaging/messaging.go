@@ -39,7 +39,7 @@ func (c *client) Connect(queues ...string) error {
 	for _, queue := range queues {
 		_, err := c.ch.QueueDeclare(
 			queue, // name
-			false, // durable
+			true,  // durable
 			false, // delete when unused
 			false, // exclusive
 			false, // no-wait
@@ -84,13 +84,27 @@ func (c *client) Publish(queue string, body []byte) error {
 		false, // mandatory
 		false, // immediate
 		amqp.Publishing{
-			ContentType: "application/json",
-			Body:        body,
+			DeliveryMode: amqp.Persistent,
+			ContentType:  "application/json",
+			Body:         body,
 		})
 }
 
-func (c *client) Subscribe(queue string, fn func(body []byte), cancel <-chan struct{}) error {
+func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), cancel <-chan struct{}) error {
+	if prefetch == 0 {
+		prefetch = 1
+	}
+
 	ch, err := c.channel()
+	if err != nil {
+		return err
+	}
+
+	err = ch.Qos(
+		prefetch, // prefetch count
+		0,        // prefetch size
+		false,    // global
+	)
 	if err != nil {
 		return err
 	}
@@ -98,7 +112,7 @@ func (c *client) Subscribe(queue string, fn func(body []byte), cancel <-chan str
 	msgs, err := ch.Consume(
 		queue, // queue
 		"",    // consumer
-		true,  // auto-ack
+		false, // auto-ack
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -114,6 +128,7 @@ func (c *client) Subscribe(queue string, fn func(body []byte), cancel <-chan str
 			return nil
 		case msg := <-msgs:
 			fn(msg.Body)
+			msg.Ack(false)
 		}
 	}
 }

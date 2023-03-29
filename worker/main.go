@@ -6,6 +6,8 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	"strconv"
+	"time"
 
 	"github.com/byvko-dev/feedlr/shared/helpers"
 	"github.com/byvko-dev/feedlr/shared/messaging"
@@ -38,11 +40,25 @@ type DiscordWebhookResponse struct {
 
 func main() {
 	queueName := helpers.MustGetEnv("TASKS_QUEUE")
+	rateLimitStr := helpers.GetEnv("TASKS_QUEUE_PREFETCH", "10")
+	rateLimit, err := strconv.Atoi(rateLimitStr)
+	if err != nil {
+		log.Printf("Failed to parse TASKS_QUEUE_PREFETCH: %v", err)
+		rateLimit = 10
+	}
 	mq := messaging.GetClient()
 	mq.Connect(queueName)
 
 	cancel := make(chan struct{})
-	mq.Subscribe(queueName, func(body []byte) {
+	mq.Subscribe(queueName, rateLimit, func(body []byte) {
+		// Sleep for 1 second to avoid rate limiting
+		start := time.Now()
+		defer func() {
+			if time.Since(start) < 1*time.Second {
+				time.Sleep(time.Second - time.Since(start))
+			}
+		}()
+
 		// Unmarshal the task
 		var task tasks.Task
 		err := json.Unmarshal(body, &task)
@@ -65,6 +81,7 @@ func main() {
 		}
 
 		log.Printf("Created a post for feed %v\n%v", task.FeedID, string(payload))
+
 	}, cancel)
 }
 
