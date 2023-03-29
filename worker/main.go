@@ -75,6 +75,10 @@ func main() {
 		}
 		defer res.Body.Close()
 
+		if res.StatusCode == 204 {
+			return
+		}
+
 		// Decode the response
 		var response map[string]any
 		err = json.NewDecoder(res.Body).Decode(&response)
@@ -88,9 +92,7 @@ func main() {
 			log.Printf("Failed to POST webhook for feed %v: %v\n%+v", task.FeedID, response["message"], response)
 			return
 		}
-		if res.StatusCode != 204 {
-			log.Printf("Failed to POST webhook for feed %v: bad status code, no error.", task.FeedID)
-			return
-		}
+
+		log.Printf("Failed to POST webhook for feed %v: bad status code, no error.", task.FeedID)
 	}, cancel)
 }
