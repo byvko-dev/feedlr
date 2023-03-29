@@ -88,3 +88,32 @@ func (c *client) Publish(queue string, body []byte) error {
 			Body:        body,
 		})
 }
+
+func (c *client) Subscribe(queue string, fn func(body []byte), cancel <-chan struct{}) error {
+	ch, err := c.channel()
+	if err != nil {
+		return err
+	}
+
+	msgs, err := ch.Consume(
+		queue, // queue
+		"",    // consumer
+		true,  // auto-ack
+		false, // exclusive
+		false, // no-local
+		false, // no-wait
+		nil,   // args
+	)
+	if err != nil {
+		return err
+	}
+
+	for {
+		select {
+		case <-cancel:
+			return nil
+		case msg := <-msgs:
+			fn(msg.Body)
+		}
+	}
+}

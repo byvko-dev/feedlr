@@ -5,9 +5,9 @@ import (
 	"time"
 
 	"github.com/byvko-dev/feedlr/scheduler/database"
-	"github.com/byvko-dev/feedlr/scheduler/messaging"
 	"github.com/byvko-dev/feedlr/scheduler/tasks"
 	"github.com/byvko-dev/feedlr/shared/helpers"
+	"github.com/byvko-dev/feedlr/shared/messaging"
 
 	"github.com/go-co-op/gocron"
 )

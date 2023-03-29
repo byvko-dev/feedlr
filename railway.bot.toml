@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "task build-bot"
-watchPatterns = ["bot/**"]
+watchPatterns = ["bot/**", "shared/**"]
 
 [deploy]
 startCommand = "bin/bot"

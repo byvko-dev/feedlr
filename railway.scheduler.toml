@@ -1,7 +1,7 @@
 [build]
 builder = "nixpacks"
 buildCommand = "task build-scheduler"
-watchPatterns = ["scheduler/**"]
+watchPatterns = ["scheduler/**", "shared/**"]
 
 [deploy]
 startCommand = "bin/scheduler"
