@@ -30,13 +30,15 @@ model Guild {
 
 model Feed {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  createdAt DateTime @default(now()) @map("createdAt")
   updatedAt DateTime @updatedAt @map("updatedAt")
-  lastFetch DateTime @default(now()) @map("lastFetch")
+  createdAt DateTime @default(now()) @map("createdAt")
+  lastFetch DateTime @default(now()) @map("lastFetch") // This will also update the updatedAt field
 
   url      String    @map("url")
   Webhooks Webhook[] @relation()
 
+  // ttl indexes are not supported by prisma yet
+  @@index([lastFetch], name: "lastFetch")
   @@index([url], name: "url")
   @@map("feeds")
 }
