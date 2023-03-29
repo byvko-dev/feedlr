@@ -44,6 +44,8 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 		}
 	}
 
+	log.Printf("Creating %d tasks", len(pendingTasks))
+
 	// Send tasks to RabbitMQ
 	for _, task := range pendingTasks {
 		err = newTask(queue, task)

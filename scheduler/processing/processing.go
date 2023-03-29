@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"log"
 	"time"
 
 	"github.com/byvko-dev/feedlr/scheduler/utils"
@@ -56,6 +57,8 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 		opp := len(posts) - 1 - i
 		posts[i], posts[opp] = posts[opp], posts[i]
 	}
+
+	log.Printf("Found %d posts for %s", len(posts), feedURL)
 
 	return posts, nil
 }
