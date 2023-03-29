@@ -11,8 +11,9 @@ import (
 
 // Bot parameters
 var (
-	GuildID        = helpers.GetEnv("GUILD_ID", "")                  // Test guild ID. If not passed - bot registers commands globally
-	RemoveCommands = helpers.MustGetEnv("REMOVE_COMMANDS") == "true" // Remove all commands after shutdowning or not
+	GuildID         = helpers.GetEnv("GUILD_ID", "")                       // Test guild ID. If not passed - bot registers commands globally
+	RemoveCommands  = helpers.GetEnv("REMOVE_COMMANDS", "false") == "true" // Remove all commands after shutdowning or not
+	CleanupCommands = helpers.GetEnv("CLEANUP_COMMANDS", "true") == "true" // Remove all commands before registering new ones
 )
 
 var s *discordgo.Session
@@ -38,6 +39,21 @@ func main() {
 	err := s.Open()
 	if err != nil {
 		log.Fatalf("Cannot open the session: %v", err)
+	}
+
+	if CleanupCommands {
+		log.Println("Cleaning up commands...")
+		// Remove all commands
+		commands, err := s.ApplicationCommands(s.State.User.ID, GuildID)
+		if err != nil {
+			log.Panicf("Cannot get commands: %v", err)
+		}
+		for _, v := range commands {
+			err := s.ApplicationCommandDelete(s.State.User.ID, GuildID, v.ID)
+			if err != nil {
+				log.Panicf("Cannot delete '%v' command: %v", v.Name, err)
+			}
+		}
 	}
 
 	log.Println("Adding commands...")
