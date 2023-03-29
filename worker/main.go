@@ -23,6 +23,11 @@ type DiscordWebhookPayload struct {
 	Embeds  []DiscordEmbed `json:"embeds,omitempty"`
 }
 
+type DiscordWebhookResponse struct {
+	Code    int    `json:"code"`
+	Message string `json:"message"`
+}
+
 func main() {
 	queueName := helpers.MustGetEnv("TASKS_QUEUE")
 	mq := messaging.GetClient()
@@ -46,7 +51,6 @@ func main() {
 
 		var data DiscordWebhookPayload
 		data.Embeds = append(data.Embeds, embed)
-		data.Content = task.Post.Title
 
 		// Convert the payload to JSON
 		payload, err := json.Marshal(data)
@@ -58,14 +62,26 @@ func main() {
 		// Send the payload to Discord
 		res, err := http.Post(task.WebhookURL, "application/json", bytes.NewBuffer(payload))
 		if err != nil {
-			log.Printf("Failed to send task for feed %v: %v", task.FeedID, err)
+			log.Printf("Failed to POST webhook for feed %v: %v", task.FeedID, err)
 			return
 		}
 		defer res.Body.Close()
 
+		// Decode the response
+		var response DiscordWebhookResponse
+		err = json.NewDecoder(res.Body).Decode(&response)
+		if err != nil {
+			log.Printf("Failed to decode response for feed %v: %v", task.FeedID, err)
+			return
+		}
+
 		// Check the response
+		if response.Message != "" {
+			log.Printf("Failed to POST webhook for feed %v: %v", task.FeedID, response.Message)
+			return
+		}
 		if res.StatusCode != 204 {
-			log.Printf("Failed to send task for feed %v: %v", task.FeedID, err)
+			log.Printf("Failed to POST webhook for feed %v: bad status code, no error.", task.FeedID)
 			return
 		}
 	}, cancel)
