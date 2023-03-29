@@ -14,9 +14,8 @@ import (
 )
 
 var apiURL = helpers.MustGetEnv("DISCORD_API_URL")
-var queueName = helpers.MustGetEnv("TASKS_QUEUE")
 
-func CreateRSSTasks(postsSince time.Time) {
+func CreateRSSTasks(queue string, postsSince time.Time) {
 	db := database.GetDatabase()
 	feeds, err := db.GetAllFeeds()
 	if err != nil {
@@ -46,7 +45,7 @@ func CreateRSSTasks(postsSince time.Time) {
 
 	// Send tasks to RabbitMQ
 	for _, task := range pendingTasks {
-		err = newTask(task)
+		err = newTask(queue, task)
 		if err != nil {
 			log.Printf("Cannot send tasks: %v", err)
 			continue
@@ -54,12 +53,12 @@ func CreateRSSTasks(postsSince time.Time) {
 	}
 }
 
-func newTask(task tasks.Task) error {
+func newTask(queue string, task tasks.Task) error {
 	payload, err := json.Marshal(task)
 	if err != nil {
 		return err
 	}
 
 	mq := messaging.GetClient()
-	return mq.Publish(queueName, payload)
+	return mq.Publish(queue, payload)
 }

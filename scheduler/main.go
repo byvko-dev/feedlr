@@ -17,13 +17,14 @@ func main() {
 	db.Connect()
 	defer db.Close()
 
+	queueName := helpers.MustGetEnv("TASKS_QUEUE")
 	mq := messaging.GetClient()
-	mq.Connect()
+	mq.Connect(queueName)
 	defer mq.Close()
 
 	s := gocron.NewScheduler(time.UTC)
 
-	_, err := s.Cron(helpers.MustGetEnv("RSS_PULL_CRON")).Do(createRSSTasksHandler())
+	_, err := s.Cron(helpers.MustGetEnv("RSS_PULL_CRON")).Do(createRSSTasksHandler(queueName))
 	if err != nil {
 		log.Fatalf("Cannot create cron job: %v", err)
 	}
@@ -33,12 +34,12 @@ func main() {
 
 }
 
-func createRSSTasksHandler() func() {
+func createRSSTasksHandler(queue string) func() {
 	now := time.Now()
 	lastRun := &now
 	return func() {
 		log.Printf("Starting tasks. Last run: %v", lastRun.Format(time.RFC3339))
-		tasks.CreateRSSTasks(*lastRun)
+		tasks.CreateRSSTasks(queue, *lastRun)
 		now := time.Now()
 		lastRun = &now
 	}
