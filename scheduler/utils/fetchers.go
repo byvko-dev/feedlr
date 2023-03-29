@@ -12,7 +12,11 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	// Use a custom HTTP client with a timeout
 	client := &http.Client{
 		Timeout: 45 * time.Second,
+		Transport: &http.Transport{
+			Proxy: getProxy(),
+		},
 	}
+
 	resp, err := client.Get(feedURL)
 	if err != nil {
 		return nil, err
