@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+buildCommand = "task build-worker"
+watchPatterns = ["worker/**"]
+
+[deploy]
+startCommand = "bin/worker"
