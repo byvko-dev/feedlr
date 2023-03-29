@@ -124,6 +124,10 @@ var (
 				return ctx.Reply("Failed to get feed from the database")
 			}
 
+			if len(feeds) == 0 {
+				return ctx.Reply("This channel is not subscribed to any feeds")
+			}
+
 			var feedNames []string
 			for _, feed := range feeds {
 				name := feedToWebhookName[feed.ID]
