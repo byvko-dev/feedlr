@@ -39,7 +39,7 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 			post.Description = description
 
 			// Set the post's image
-			if item.Image != nil {
+			if item.Image != nil && item.Image.URL != "" {
 				post.Image = item.Image.URL
 			} else if img := findImage(item.Description); img != "" { // Check post description
 				post.Image = findImage(item.Description)
