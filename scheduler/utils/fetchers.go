@@ -26,5 +26,11 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 		}
 	}
 
+	// Reverse the posts so that the most recent one is first
+	for i := len(posts)/2 - 1; i >= 0; i-- {
+		opp := len(posts) - 1 - i
+		posts[i], posts[opp] = posts[opp], posts[i]
+	}
+
 	return posts, nil
 }

@@ -19,8 +19,9 @@ type DiscordEmbed struct {
 	Color       int    `json:"color,omitempty"`
 }
 type DiscordWebhookPayload struct {
-	Content string         `json:"content"`
-	Embeds  []DiscordEmbed `json:"embeds,omitempty"`
+	Content  string         `json:"content,omitempty"`
+	Username string         `json:"username,omitempty"`
+	Embeds   []DiscordEmbed `json:"embeds,omitempty"`
 }
 
 type DiscordWebhookResponse struct {
@@ -51,6 +52,7 @@ func main() {
 
 		var data DiscordWebhookPayload
 		data.Embeds = append(data.Embeds, embed)
+		data.Username = task.WebhookName
 
 		// Convert the payload to JSON
 		payload, err := json.Marshal(data)
