@@ -19,12 +19,14 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 	}
 	defer resp.Body.Close()
 
+	// Parse the feed
 	fp := gofeed.NewParser()
 	feed, err := fp.Parse(resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
+	// Filter out posts that are older than the cutoff
 	posts := make([]tasks.Post, 0)
 	for _, item := range feed.Items {
 		if item.PublishedParsed.After(cutoff) {
