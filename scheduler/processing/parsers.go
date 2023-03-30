@@ -89,21 +89,21 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		}
 
 		// Set the post's image
-		var imageFetchers = []func(string) string{}
+		var imageFetchers = []func(gofeed.Item) string{}
 		// Check item image, this is likely the intended image
-		imageFetchers = append(imageFetchers, func(content string) string {
+		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
 			if item.Image != nil && item.Image.URL != "" {
 				return item.Image.URL
 			}
 			return ""
 		})
 		// Check post description, this is likely a thumbnail
-		imageFetchers = append(imageFetchers, func(content string) string {
-			return findImage(content)
+		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+			return findImage(item.Description + " " + item.Content)
 		})
 		// Check post link, this is likely an external resource
-		imageFetchers = append(imageFetchers, func(content string) string {
-			url := findUrl(content)
+		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+			url := findUrl(item.Description + " " + item.Content)
 			if url == "" {
 				return ""
 			}
@@ -114,7 +114,7 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 			return findMetadataImageURL(string(data))
 		})
 		// Check page metadata
-		imageFetchers = append(imageFetchers, func(content string) string {
+		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
 			if item.Link == "" {
 				return ""
 			}
@@ -126,7 +126,7 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		})
 
 		for _, fetcher := range imageFetchers {
-			image := fetcher(item.Description + " " + item.Content)
+			image := fetcher(item)
 			if image != "" {
 				post.Image = image
 				break
