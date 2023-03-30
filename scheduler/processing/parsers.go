@@ -15,6 +15,50 @@ import (
 var converters = map[string]*md.Converter{}
 var regexURL = regexp.MustCompile(`([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?`)
 
+var imageFetchers = []func(gofeed.Item) string{}
+
+func init() {
+	// Set up image fetchers, they are executed in order
+
+	// Check item image, this is likely the intended image
+	imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+		if item.Image != nil && item.Image.URL != "" {
+			return item.Image.URL
+		}
+		return ""
+	})
+
+	// Check post description, this is likely a thumbnail
+	imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+		return findImage(item.Description + " " + item.Content)
+	})
+
+	// Check post link, this is likely an external resource
+	imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+		url := findUrl(item.Description + " " + item.Content)
+		if url == "" {
+			return ""
+		}
+		data, _ := utils.Fetch(url)
+		if data == nil {
+			return ""
+		}
+		return findMetadataImageURL(string(data))
+	})
+
+	// Check page metadata
+	imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
+		if item.Link == "" {
+			return ""
+		}
+		data, _ := utils.Fetch(item.Link)
+		if data == nil {
+			return ""
+		}
+		return findMetadataImageURL(string(data))
+	})
+}
+
 func init() {
 	// Description converter
 	converter := md.NewConverter("", true, nil)
@@ -89,42 +133,6 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		}
 
 		// Set the post's image
-		var imageFetchers = []func(gofeed.Item) string{}
-		// Check item image, this is likely the intended image
-		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
-			if item.Image != nil && item.Image.URL != "" {
-				return item.Image.URL
-			}
-			return ""
-		})
-		// Check post description, this is likely a thumbnail
-		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
-			return findImage(item.Description + " " + item.Content)
-		})
-		// Check post link, this is likely an external resource
-		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
-			url := findUrl(item.Description + " " + item.Content)
-			if url == "" {
-				return ""
-			}
-			data, _ := utils.Fetch(url)
-			if data == nil {
-				return ""
-			}
-			return findMetadataImageURL(string(data))
-		})
-		// Check page metadata
-		imageFetchers = append(imageFetchers, func(item gofeed.Item) string {
-			if item.Link == "" {
-				return ""
-			}
-			data, _ := utils.Fetch(item.Link)
-			if data == nil {
-				return ""
-			}
-			return findMetadataImageURL(string(data))
-		})
-
 		for _, fetcher := range imageFetchers {
 			image := fetcher(item)
 			if image != "" {
