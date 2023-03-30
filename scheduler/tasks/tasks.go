@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	prisma "github.com/byvko-dev/feedlr/prisma/client"
 	"github.com/byvko-dev/feedlr/scheduler/database"
@@ -22,6 +23,10 @@ type sliceWithLock[T any] struct {
 }
 
 func CreateRSSTasks(queue string) {
+	// This is used as lastFetch for all feeds with posts
+	// it is very likely unnecessary, but it is here to not miss any super quick RSS updates
+	jobStartTime := time.Now()
+
 	db := database.GetDatabase()
 	feeds, err := db.GetAllFeeds()
 	if err != nil {
@@ -45,7 +50,7 @@ func CreateRSSTasks(queue string) {
 			lastFetch, ok := feed.LastFetch()
 			if !ok {
 				// If feed has never been fetched, set last fetch to now and skip
-				err = db.UpdateFeedsLastFetched(feed.ID)
+				err = db.UpdateFeedsLastFetched(jobStartTime, feed.ID)
 				if err != nil {
 					log.Printf("Cannot update feed last fetched: %v", err)
 				}
@@ -97,7 +102,7 @@ func CreateRSSTasks(queue string) {
 		for _, task := range items {
 			updatedFeeds = append(updatedFeeds, task.FeedID)
 		}
-		err = db.UpdateFeedsLastFetched(updatedFeeds...)
+		err = db.UpdateFeedsLastFetched(jobStartTime, updatedFeeds...)
 		if err != nil {
 			log.Printf("Cannot update feeds last fetched: %v", err)
 		}

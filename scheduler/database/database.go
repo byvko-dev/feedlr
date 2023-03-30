@@ -38,11 +38,11 @@ func (d *Database) GetAllFeeds() ([]p.FeedModel, error) {
 	return feed, nil
 }
 
-func (d *Database) UpdateFeedsLastFetched(ids ...string) error {
+func (d *Database) UpdateFeedsLastFetched(timestamp time.Time, ids ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()
 
-	_, err := d.client.Feed.FindMany(p.Feed.ID.In(ids)).Update(p.Feed.LastFetch.Set(time.Now())).Exec(ctx)
+	_, err := d.client.Feed.FindMany(p.Feed.ID.In(ids)).Update(p.Feed.LastFetch.Set(timestamp)).Exec(ctx)
 	if err != nil {
 		return err
 	}
