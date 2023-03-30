@@ -49,6 +49,17 @@ func findImage(content string) string {
 	return img
 }
 
+func findUrl(content string) string {
+	p := strings.NewReader(content)
+	doc, err := goquery.NewDocumentFromReader(p)
+	if err != nil {
+		return ""
+	}
+
+	url, _ := doc.Find("a[href]").First().Attr("href")
+	return url
+}
+
 func findMetadataImageURL(content string) string {
 	p := strings.NewReader(content)
 	doc, err := goquery.NewDocumentFromReader(p)
@@ -83,12 +94,48 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		}
 
 		// Set the post's image
-		if img := findImage(item.Description + " " + item.Content); img != "" { // Check post description, this is likely a thumbnail
-			post.Image = img
-		} else if item.Image != nil && item.Image.URL != "" { // Check item image, this is likely an avatar
-			post.Image = item.Image.URL
-		} else if data, _ := utils.Fetch(item.Link); data != nil { // Check page metadata
-			post.Image = findMetadataImageURL(string(data))
+		var imageFetchers = []func(string) string{}
+		// Check item image, this is likely the intended image
+		imageFetchers = append(imageFetchers, func(content string) string {
+			if item.Image != nil && item.Image.URL != "" {
+				return item.Image.URL
+			}
+			return ""
+		})
+		// Check post description, this is likely a thumbnail
+		imageFetchers = append(imageFetchers, func(content string) string {
+			return findImage(content)
+		})
+		// Check post link, this is likely an external resource
+		imageFetchers = append(imageFetchers, func(content string) string {
+			url := findUrl(content)
+			if url == "" {
+				return ""
+			}
+			data, _ := utils.Fetch(url)
+			if data == nil {
+				return ""
+			}
+			return findMetadataImageURL(string(data))
+		})
+		// Check page metadata
+		imageFetchers = append(imageFetchers, func(content string) string {
+			if item.Link == "" {
+				return ""
+			}
+			data, _ := utils.Fetch(item.Link)
+			if data == nil {
+				return ""
+			}
+			return findMetadataImageURL(string(data))
+		})
+
+		for _, fetcher := range imageFetchers {
+			image := fetcher(post.Description)
+			if image != "" {
+				post.Image = image
+				break
+			}
 		}
 
 		posts = append(posts, post)
