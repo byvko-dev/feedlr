@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"sync"
-	"time"
 
 	prisma "github.com/byvko-dev/feedlr/prisma/client"
 	"github.com/byvko-dev/feedlr/scheduler/database"
@@ -22,7 +21,7 @@ type sliceWithLock[T any] struct {
 	items []T
 }
 
-func CreateRSSTasks(queue string, postsSince time.Time) {
+func CreateRSSTasks(queue string) {
 	db := database.GetDatabase()
 	feeds, err := db.GetAllFeeds()
 	if err != nil {
@@ -43,7 +42,17 @@ func CreateRSSTasks(queue string, postsSince time.Time) {
 		go func(feed prisma.FeedModel) {
 			defer wg.Done() // Mark feed goroutine as done
 
-			posts, err := processing.GetFeedPosts(feed.URL, postsSince)
+			lastFetch, ok := feed.LastFetch()
+			if !ok {
+				// If feed has never been fetched, set last fetch to now and skip
+				err = db.UpdateFeedsLastFetched(feed.ID)
+				if err != nil {
+					log.Printf("Cannot update feed last fetched: %v", err)
+				}
+				return
+			}
+
+			posts, err := processing.GetFeedPosts(feed.URL, lastFetch)
 			if err != nil {
 				log.Printf("Cannot get feed posts: %v", err)
 				return

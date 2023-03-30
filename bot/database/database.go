@@ -76,6 +76,7 @@ func (d *Database) CreateFeed(url string) (*p.FeedModel, error) {
 	defer cancel()
 	feed, err := d.client.Feed.CreateOne(
 		p.Feed.URL.Set(url),
+		p.Feed.LastFetch.Set(time.Now()),
 	).With(p.Feed.Webhooks.Fetch()).Exec(ctx)
 	if err != nil {
 		return nil, err

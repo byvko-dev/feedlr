@@ -35,12 +35,8 @@ func main() {
 }
 
 func createRSSTasksHandler(queue string) func() {
-	now := time.Now()
-	lastRun := &now
 	return func() {
-		log.Printf("Starting tasks. Last run: %v", lastRun.Format(time.RFC3339))
-		tasks.CreateRSSTasks(queue, *lastRun)
-		now := time.Now()
-		lastRun = &now
+		log.Println("Creating RSS tasks...")
+		tasks.CreateRSSTasks(queue)
 	}
 }
