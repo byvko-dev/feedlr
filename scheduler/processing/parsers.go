@@ -1,6 +1,7 @@
 package processing
 
 import (
+	"regexp"
 	"strings"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 )
 
 var converters = map[string]*md.Converter{}
+var regexURL = regexp.MustCompile(`([\w+]+\:\/\/)?([\w\d-]+\.)*[\w-]+[\.\:]\w+([\/\?\=\&\#\.]?[\w-]+)*\/?`)
 
 func init() {
 	// Description converter
@@ -50,14 +52,7 @@ func findImage(content string) string {
 }
 
 func findUrl(content string) string {
-	p := strings.NewReader(content)
-	doc, err := goquery.NewDocumentFromReader(p)
-	if err != nil {
-		return ""
-	}
-
-	url, _ := doc.Find("a[href]").First().Attr("href")
-	return url
+	return regexURL.FindString(content)
 }
 
 func findMetadataImageURL(content string) string {
@@ -131,7 +126,7 @@ func feedItemsToPosts(items []gofeed.Item) ([]tasks.Post, error) {
 		})
 
 		for _, fetcher := range imageFetchers {
-			image := fetcher(post.Description)
+			image := fetcher(item.Description + " " + item.Content)
 			if image != "" {
 				post.Image = image
 				break

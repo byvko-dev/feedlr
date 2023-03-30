@@ -11,7 +11,7 @@ import (
 )
 
 func TestParseFeedItems(t *testing.T) {
-	feedURL := "https://openai.com/blog/rss.xml"
+	feedURL := "https://rsshub.app/twitter/user/cnn/readable=1&addLinkForPics=1&includeRts=0&excludeReplies=1"
 
 	data, err := utils.Fetch(feedURL)
 	if err != nil {
