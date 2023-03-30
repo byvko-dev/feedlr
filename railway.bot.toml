@@ -1,7 +1,10 @@
 [build]
-builder = "nixpacks"
+builder = "NIXPACKS"
 buildCommand = "task build-bot"
-watchPatterns = ["bot/**", "shared/**"]
+watchPatterns = ["bot/**","shared/**","prisma/**"]
+nixpacksConfigPath = "nixpacks.toml"
 
 [deploy]
 startCommand = "bin/bot"
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 10
