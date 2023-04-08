@@ -64,17 +64,18 @@ func (c *client) Publish(queue string, content ...[]byte) error {
 	}
 	defer c.close()
 
-	ch, err := c.conn.Channel()
-	if err != nil {
-		return err
-	}
-
 	var wg sync.WaitGroup
 	errors := make(chan error, len(content))
 	for _, body := range content {
 		wg.Add(1)
 		go func(body []byte) {
 			defer wg.Done()
+
+			ch, err := c.conn.Channel()
+			if err != nil {
+				errors <- err
+				return
+			}
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -112,8 +113,6 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 	}
 	defer c.close()
 
-	closeNotify := c.conn.NotifyClose(make(chan *amqp.Error))
-
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
@@ -140,6 +139,9 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 	if err != nil {
 		return err
 	}
+
+	// Listen for connection close
+	closeNotify := c.conn.NotifyClose(make(chan *amqp.Error))
 
 	for {
 		select {
