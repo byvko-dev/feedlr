@@ -3,7 +3,6 @@ package messaging
 import (
 	"context"
 	"errors"
-	"sync"
 	"time"
 
 	"github.com/byvko-dev/feedlr/shared/helpers"
@@ -68,38 +67,30 @@ func (c *client) Publish(queue string, content ...[]byte) error {
 	}
 	defer c.close()
 
-	var wg sync.WaitGroup
-	errors := make(chan error, len(content))
+	var errors []error
 	for _, body := range content {
-		wg.Add(1)
-		go func(body []byte) {
-			defer wg.Done()
+		ch, err := c.channel()
+		if err != nil {
+			errors = append(errors, err)
+			continue
+		}
+		defer ch.Close()
 
-			ch, err := c.channel()
-			if err != nil {
-				errors <- err
-				return
-			}
-			defer ch.Close()
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-			defer cancel()
-
-			errors <- ch.PublishWithContext(ctx,
-				"",    // exchange
-				queue, // routing key
-				false, // mandatory
-				false, // immediate
-				amqp.Publishing{
-					ContentType: "application/json",
-					Body:        body,
-				})
-		}(body)
+		errors = append(errors, ch.PublishWithContext(ctx,
+			"",    // exchange
+			queue, // routing key
+			false, // mandatory
+			false, // immediate
+			amqp.Publishing{
+				ContentType: "application/json",
+				Body:        body,
+			}))
 	}
-	wg.Wait()
-	close(errors)
 
-	for err := range errors {
+	for _, err := range errors {
 		if err != nil {
 			return err
 		}
