@@ -122,6 +122,7 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 	if err != nil {
 		return err
 	}
+	defer ch.Close()
 
 	err = ch.Qos(
 		prefetch, // prefetch count
