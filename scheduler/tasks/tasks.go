@@ -1,7 +1,6 @@
 package tasks
 
 import (
-	"encoding/json"
 	"fmt"
 	"log"
 	"sync"
@@ -11,7 +10,6 @@ import (
 	"github.com/byvko-dev/feedlr/scheduler/database"
 	"github.com/byvko-dev/feedlr/scheduler/processing"
 	"github.com/byvko-dev/feedlr/shared/helpers"
-	"github.com/byvko-dev/feedlr/shared/messaging"
 	"github.com/byvko-dev/feedlr/shared/tasks"
 )
 
@@ -22,7 +20,7 @@ type sliceWithLock[T any] struct {
 	items []T
 }
 
-func CreateRSSTasks(queue string) {
+func CreateAllFeedsTasks(queue string, postsCutoff *time.Time, limit int) {
 	// This is used as lastFetch for all feeds with posts
 	// it is very likely unnecessary, but it is here to not miss any super quick RSS updates
 	jobStartTime := time.Now()
@@ -36,7 +34,6 @@ func CreateRSSTasks(queue string) {
 
 	// Create tasks
 	var wg sync.WaitGroup
-	var pendingTasks sliceWithLock[tasks.Task]
 	for _, feed := range feeds {
 		// Skip feeds without webhooks
 		if len(feed.Webhooks()) == 0 {
@@ -47,53 +44,43 @@ func CreateRSSTasks(queue string) {
 		go func(feed prisma.FeedModel) {
 			defer wg.Done() // Mark feed goroutine as done
 
-			lastFetch, ok := feed.LastFetch()
-			if !ok {
-				// If feed has never been fetched, set last fetch to now and skip
-				err = db.UpdateFeedsLastFetched(jobStartTime, feed.ID)
-				if err != nil {
-					log.Printf("Cannot update feed last fetched: %v", err)
-				}
-				return
-			}
-
-			posts, err := processing.GetFeedPosts(feed.URL, lastFetch)
-			if err != nil {
-				log.Printf("Cannot get feed posts: %v", err)
-				return
-			}
-
-			for _, webhook := range feed.Webhooks() {
-				wg.Add(1) // Start goroutine for each webhook
-				go func(feed prisma.FeedModel, webhook prisma.WebhookModel, posts []tasks.Post) {
-					defer wg.Done() // Mark webhook goroutine as done
-
-					// Create tasks for each post
-					var webhookTasks []tasks.Task
-					for _, post := range posts {
-						task := tasks.Task{
-							FeedID:      feed.ID,
-							WebhookURL:  fmt.Sprintf("%s/webhooks/%s/%s", apiURL, webhook.ExternalID, webhook.Token),
-							WebhookName: webhook.Name,
-							Post:        post,
-						}
-						webhookTasks = append(webhookTasks, task)
+			// If postsCutoff is nil, get last fetch from DB
+			if postsCutoff == nil {
+				lastFetch, ok := feed.LastFetch()
+				if !ok {
+					// If feed has never been fetched, set last fetch to now and skip
+					err = db.UpdateFeedsLastFetched(jobStartTime, feed.ID)
+					if err != nil {
+						log.Printf("Cannot update feed last fetched: %v", err)
 					}
+					return
+				}
+				postsCutoff = &lastFetch
+			}
 
-					// Add tasks to pending tasks using lock
-					pendingTasks.Lock()
-					pendingTasks.items = append(pendingTasks.items, webhookTasks...)
-					pendingTasks.Unlock()
-				}(feed, webhook, posts)
+			err := CreateFeedTasks(queue, feed, *postsCutoff, limit)
+			if err != nil {
+				log.Printf("Cannot create tasks for feed %v: %v", feed.ID, err)
+				return
 			}
 		}(feed)
 	}
 
 	wg.Wait() // Wait for all feed and webhook goroutines to finish
+}
 
-	if len(pendingTasks.items) == 0 {
-		log.Printf("No tasks to create from %v feeds\n", len(feeds))
-		return
+func CreateFeedTasks(queue string, feed prisma.FeedModel, postsCutoff time.Time, limit int) error {
+	startTime := time.Now()
+	db := database.GetDatabase()
+
+	posts, err := processing.GetFeedPosts(feed.URL, postsCutoff, limit)
+	if err != nil {
+		return fmt.Errorf("cannot get feed posts: %w", err)
+	}
+
+	feedTasks := feedPostsToTasks(feed, feed.Webhooks(), posts)
+	if len(feedTasks) == 0 {
+		return nil
 	}
 
 	// Update feeds last fetched
@@ -102,30 +89,19 @@ func CreateRSSTasks(queue string) {
 		for _, task := range items {
 			updatedFeeds = append(updatedFeeds, task.FeedID)
 		}
-		err = db.UpdateFeedsLastFetched(jobStartTime, updatedFeeds...)
+		err = db.UpdateFeedsLastFetched(startTime, updatedFeeds...)
 		if err != nil {
 			log.Printf("Cannot update feeds last fetched: %v", err)
 		}
-	}(pendingTasks.items)
-
-	log.Printf("Creating %d tasks", len(pendingTasks.items))
+	}(feedTasks)
 
 	// Send tasks to RabbitMQ
-	for _, task := range pendingTasks.items {
+	for _, task := range feedTasks {
 		err = newTask(queue, task)
 		if err != nil {
-			log.Printf("Cannot send tasks: %v", err)
-			continue
+			return fmt.Errorf("cannot send task: %w", err)
 		}
 	}
-}
 
-func newTask(queue string, task tasks.Task) error {
-	payload, err := json.Marshal(task)
-	if err != nil {
-		return err
-	}
-
-	mq := messaging.GetClient()
-	return mq.Publish(queue, payload)
+	return nil
 }

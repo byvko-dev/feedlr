@@ -63,7 +63,7 @@ func main() {
 		var task tasks.Task
 		err := json.Unmarshal(body, &task)
 		if err != nil {
-			log.Printf("Failed to unmarshal task: %v", err)
+			log.Printf("Failed to unmarshal task: %v\n%v", err, string(body))
 			return
 		}
 

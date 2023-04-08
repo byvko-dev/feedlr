@@ -37,6 +37,6 @@ func main() {
 func createRSSTasksHandler(queue string) func() {
 	return func() {
 		log.Println("Creating RSS tasks...")
-		tasks.CreateRSSTasks(queue)
+		tasks.CreateAllFeedsTasks(queue, nil, 0)
 	}
 }

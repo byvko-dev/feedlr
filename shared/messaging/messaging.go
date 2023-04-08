@@ -2,6 +2,7 @@ package messaging
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/byvko-dev/feedlr/shared/helpers"
@@ -69,7 +70,16 @@ func (c *client) channel() (*amqp.Channel, error) {
 	return c.ch, nil
 }
 
-func (c *client) Publish(queue string, body []byte) error {
+func (c *client) Publish(queue string, body []byte, verify bool) error {
+	if verify {
+		// Verify that the body is valid JSON
+		verified := make(map[string]any)
+		err := json.Unmarshal(body, &verified)
+		if err != nil {
+			return err
+		}
+	}
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

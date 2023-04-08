@@ -38,6 +38,17 @@ func (d *Database) GetAllFeeds() ([]p.FeedModel, error) {
 	return feed, nil
 }
 
+func (d *Database) GetFeedByID(id string) (*p.FeedModel, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	feed, err := d.client.Feed.FindUnique(p.Feed.ID.Equals(id)).With(p.Feed.Webhooks.Fetch()).Exec(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return feed, nil
+}
+
 func (d *Database) UpdateFeedsLastFetched(timestamp time.Time, ids ...string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
 	defer cancel()

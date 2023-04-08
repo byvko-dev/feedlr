@@ -9,7 +9,7 @@ import (
 	"github.com/mmcdole/gofeed"
 )
 
-func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
+func GetFeedPosts(feedURL string, cutoff time.Time, limit int) ([]tasks.Post, error) {
 	data, err := utils.Fetch(feedURL)
 	if err != nil {
 		return nil, err
@@ -24,7 +24,11 @@ func GetFeedPosts(feedURL string, cutoff time.Time) ([]tasks.Post, error) {
 
 	// Filter out posts that are older than the cutoff
 	var items []gofeed.Item
-	for _, item := range feed.Items {
+	for i, item := range feed.Items {
+		if limit != 0 && i >= limit {
+			break
+		}
+
 		if item.PublishedParsed.After(cutoff) {
 			items = append(items, *item)
 		}
