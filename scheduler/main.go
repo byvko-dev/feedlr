@@ -7,7 +7,6 @@ import (
 	"github.com/byvko-dev/feedlr/scheduler/database"
 	"github.com/byvko-dev/feedlr/scheduler/tasks"
 	"github.com/byvko-dev/feedlr/shared/helpers"
-	"github.com/byvko-dev/feedlr/shared/messaging"
 
 	"github.com/go-co-op/gocron"
 )
@@ -18,9 +17,6 @@ func main() {
 	defer db.Close()
 
 	queueName := helpers.MustGetEnv("TASKS_QUEUE")
-	mq := messaging.GetClient()
-	mq.Connect(queueName)
-	defer mq.Close()
 
 	s := gocron.NewScheduler(time.UTC)
 

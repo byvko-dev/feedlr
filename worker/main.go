@@ -46,8 +46,7 @@ func main() {
 		log.Printf("Failed to parse TASKS_QUEUE_PREFETCH: %v", err)
 		rateLimit = 10
 	}
-	mq := messaging.GetClient()
-	mq.Connect(queueName)
+	mq := messaging.NewClient()
 
 	cancel := make(chan struct{})
 	mq.Subscribe(queueName, rateLimit, func(body []byte) {

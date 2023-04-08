@@ -14,16 +14,11 @@ type client struct {
 	conn *amqp.Connection
 }
 
-var clientCache *client
-
-func GetClient() *client {
-	if clientCache == nil {
-		clientCache = &client{}
-	}
-	return clientCache
+func NewClient() *client {
+	return &client{}
 }
 
-func (c *client) Connect(queues ...string) error {
+func (c *client) connect(queue string) error {
 	var err error
 	c.conn, err = amqp.Dial(helpers.MustGetEnv("RABBITMQ_URL"))
 	if err != nil {
@@ -37,37 +32,24 @@ func (c *client) Connect(queues ...string) error {
 	defer c.ch.Close()
 
 	// Declare queues
-	for _, queue := range queues {
-		_, err := c.ch.QueueDeclare(
-			queue, // name
-			true,  // durable
-			false, // delete when unused
-			false, // exclusive
-			false, // no-wait
-			nil,   // arguments
-		)
-		if err != nil {
-			return err
-		}
+
+	_, err = c.ch.QueueDeclare(
+		queue, // name
+		true,  // durable
+		false, // delete when unused
+		false, // exclusive
+		false, // no-wait
+		nil,   // arguments
+	)
+	if err != nil {
+		return err
 	}
 
 	return nil
 }
 
-func (c *client) Close() {
+func (c *client) close() {
 	c.conn.Close()
-}
-
-// Ensures that the channel is valid
-func (c *client) channel() (*amqp.Channel, error) {
-	if c.ch == nil || c.ch.IsClosed() {
-		var err error
-		c.ch, err = c.conn.Channel()
-		if err != nil {
-			return nil, err
-		}
-	}
-	return c.ch, nil
 }
 
 func (c *client) Publish(queue string, body []byte, verify bool) error {
@@ -80,10 +62,16 @@ func (c *client) Publish(queue string, body []byte, verify bool) error {
 		}
 	}
 
+	err := c.connect(queue)
+	if err != nil {
+		return err
+	}
+	defer c.close()
+
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	ch, err := c.channel()
+	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
 	}
@@ -105,7 +93,13 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 		prefetch = 1
 	}
 
-	ch, err := c.channel()
+	err := c.connect(queue)
+	if err != nil {
+		return err
+	}
+	defer c.close()
+
+	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
 	}

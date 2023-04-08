@@ -5,4 +5,5 @@ use (
 	./prisma
 	./scheduler
 	./worker
+	./shared
 )

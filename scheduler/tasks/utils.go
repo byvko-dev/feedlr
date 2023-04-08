@@ -54,6 +54,6 @@ func newTask(queue string, task tasks.Task) error {
 		return err
 	}
 
-	mq := messaging.GetClient()
+	mq := messaging.NewClient()
 	return mq.Publish(queue, payload, true)
 }
