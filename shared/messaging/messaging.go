@@ -15,12 +15,18 @@ var (
 )
 
 type client struct {
-	ch   *amqp.Channel
 	conn *amqp.Connection
 }
 
 func NewClient() *client {
 	return &client{}
+}
+
+func (c *client) channel() (*amqp.Channel, error) {
+	if c.conn == nil || c.conn.IsClosed() {
+		return nil, ErrConnectionClosed
+	}
+	return c.conn.Channel()
 }
 
 func (c *client) connect(queue string) error {
@@ -30,15 +36,13 @@ func (c *client) connect(queue string) error {
 		return err
 	}
 
-	c.ch, err = c.conn.Channel()
+	ch, err := c.channel()
 	if err != nil {
 		return err
 	}
-	defer c.ch.Close()
+	defer ch.Close()
 
-	// Declare queues
-
-	_, err = c.ch.QueueDeclare(
+	_, err = ch.QueueDeclare(
 		queue, // name
 		true,  // durable
 		false, // delete when unused
@@ -71,11 +75,12 @@ func (c *client) Publish(queue string, content ...[]byte) error {
 		go func(body []byte) {
 			defer wg.Done()
 
-			ch, err := c.conn.Channel()
+			ch, err := c.channel()
 			if err != nil {
 				errors <- err
 				return
 			}
+			defer ch.Close()
 
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
@@ -113,7 +118,7 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 	}
 	defer c.close()
 
-	ch, err := c.conn.Channel()
+	ch, err := c.channel()
 	if err != nil {
 		return err
 	}
