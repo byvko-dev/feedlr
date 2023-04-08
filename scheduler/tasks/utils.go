@@ -48,12 +48,17 @@ func feedPostsToTasks(feed prisma.FeedModel, wh []prisma.WebhookModel, posts []t
 
 }
 
-func newTask(queue string, task tasks.Task) error {
-	payload, err := json.Marshal(task)
-	if err != nil {
-		return err
+func newTasks(queue string, task ...tasks.Task) error {
+	var content [][]byte
+
+	for _, t := range task {
+		payload, err := json.Marshal(t)
+		if err != nil {
+			return err
+		}
+		content = append(content, payload)
 	}
 
 	mq := messaging.NewClient()
-	return mq.Publish(queue, payload, true)
+	return mq.Publish(queue, content...)
 }

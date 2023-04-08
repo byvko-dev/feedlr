@@ -20,7 +20,7 @@ type sliceWithLock[T any] struct {
 	items []T
 }
 
-func CreateAllFeedsTasks(queue string, postsCutoff *time.Time, limit int) {
+func CreateAllFeedsTasks(queue string) {
 	// This is used as lastFetch for all feeds with posts
 	// it is very likely unnecessary, but it is here to not miss any super quick RSS updates
 	jobStartTime := time.Now()
@@ -37,6 +37,7 @@ func CreateAllFeedsTasks(queue string, postsCutoff *time.Time, limit int) {
 	for _, feed := range feeds {
 		// Skip feeds without webhooks
 		if len(feed.Webhooks()) == 0 {
+			log.Printf("Feed %v has no webhooks, skipping", feed.ID)
 			continue
 		}
 
@@ -44,21 +45,16 @@ func CreateAllFeedsTasks(queue string, postsCutoff *time.Time, limit int) {
 		go func(feed prisma.FeedModel) {
 			defer wg.Done() // Mark feed goroutine as done
 
-			// If postsCutoff is nil, get last fetch from DB
-			if postsCutoff == nil {
-				lastFetch, ok := feed.LastFetch()
-				if !ok {
-					// If feed has never been fetched, set last fetch to now and skip
-					err = db.UpdateFeedsLastFetched(jobStartTime, feed.ID)
-					if err != nil {
-						log.Printf("Cannot update feed last fetched: %v", err)
-					}
-					return
+			lastFetch, ok := feed.LastFetch()
+			if !ok {
+				// If feed has never been fetched, set last fetch to now and skip
+				err = db.UpdateFeedsLastFetched(jobStartTime, feed.ID)
+				if err != nil {
+					log.Printf("Cannot update feed last fetched: %v", err)
 				}
-				postsCutoff = &lastFetch
+				return
 			}
-
-			err := CreateFeedTasks(queue, feed, *postsCutoff, limit)
+			err := CreateFeedTasks(queue, feed, lastFetch, 0)
 			if err != nil {
 				log.Printf("Cannot create tasks for feed %v: %v", feed.ID, err)
 				return
@@ -80,6 +76,7 @@ func CreateFeedTasks(queue string, feed prisma.FeedModel, postsCutoff time.Time,
 
 	feedTasks := feedPostsToTasks(feed, feed.Webhooks(), posts)
 	if len(feedTasks) == 0 {
+		log.Printf("No tasks for feed %v", feed.ID)
 		return nil
 	}
 
@@ -96,12 +93,5 @@ func CreateFeedTasks(queue string, feed prisma.FeedModel, postsCutoff time.Time,
 	}(feedTasks)
 
 	// Send tasks to RabbitMQ
-	for _, task := range feedTasks {
-		err = newTask(queue, task)
-		if err != nil {
-			return fmt.Errorf("cannot send task: %w", err)
-		}
-	}
-
-	return nil
+	return newTasks(queue, feedTasks...)
 }

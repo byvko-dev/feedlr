@@ -2,7 +2,7 @@ package messaging
 
 import (
 	"context"
-	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/byvko-dev/feedlr/shared/helpers"
@@ -52,40 +52,48 @@ func (c *client) close() {
 	c.conn.Close()
 }
 
-func (c *client) Publish(queue string, body []byte, verify bool) error {
-	if verify {
-		// Verify that the body is valid JSON
-		verified := make(map[string]any)
-		err := json.Unmarshal(body, &verified)
-		if err != nil {
-			return err
-		}
-	}
-
+func (c *client) Publish(queue string, content ...[]byte) error {
 	err := c.connect(queue)
 	if err != nil {
 		return err
 	}
 	defer c.close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
 	}
-	return ch.PublishWithContext(
-		ctx,
-		"",    // exchange
-		queue, // routing key
-		false, // mandatory
-		false, // immediate
-		amqp.Publishing{
-			DeliveryMode: amqp.Persistent,
-			ContentType:  "application/json",
-			Body:         body,
-		})
+
+	var wg sync.WaitGroup
+	errors := make(chan error, len(content))
+	for _, body := range content {
+		wg.Add(1)
+		go func(body []byte) {
+			defer wg.Done()
+
+			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
+
+			errors <- ch.PublishWithContext(ctx,
+				"",    // exchange
+				queue, // routing key
+				false, // mandatory
+				false, // immediate
+				amqp.Publishing{
+					ContentType: "application/json",
+					Body:        body,
+				})
+		}(body)
+	}
+	wg.Done()
+	close(errors)
+
+	for err := range errors {
+		if err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), cancel <-chan struct{}) error {
