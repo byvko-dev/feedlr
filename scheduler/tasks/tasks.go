@@ -15,11 +15,6 @@ import (
 
 var apiURL = helpers.MustGetEnv("DISCORD_API_URL")
 
-type sliceWithLock[T any] struct {
-	sync.Mutex
-	items []T
-}
-
 func CreateAllFeedsTasks(queue string) {
 	// This is used as lastFetch for all feeds with posts
 	// it is very likely unnecessary, but it is here to not miss any super quick RSS updates

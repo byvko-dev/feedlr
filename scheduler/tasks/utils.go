@@ -10,6 +10,11 @@ import (
 	"github.com/byvko-dev/feedlr/shared/tasks"
 )
 
+type sliceWithLock[T any] struct {
+	sync.Mutex
+	items []T
+}
+
 func webhookPostsToTasks(feed prisma.FeedModel, wh prisma.WebhookModel, posts []tasks.Post) []tasks.Task {
 	var webhookTasks []tasks.Task
 	for _, post := range posts {
