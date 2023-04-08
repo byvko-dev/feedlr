@@ -96,7 +96,7 @@ func (c *client) Publish(queue string, content ...[]byte) error {
 				})
 		}(body)
 	}
-	wg.Done()
+	wg.Wait()
 	close(errors)
 
 	for err := range errors {
