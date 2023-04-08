@@ -2,11 +2,16 @@ package messaging
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"time"
 
 	"github.com/byvko-dev/feedlr/shared/helpers"
 	amqp "github.com/rabbitmq/amqp091-go"
+)
+
+var (
+	ErrConnectionClosed = errors.New("connection closed")
 )
 
 type client struct {
@@ -107,6 +112,8 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 	}
 	defer c.close()
 
+	closeNotify := c.conn.NotifyClose(make(chan *amqp.Error))
+
 	ch, err := c.conn.Channel()
 	if err != nil {
 		return err
@@ -136,6 +143,8 @@ func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), can
 
 	for {
 		select {
+		case <-closeNotify:
+			return ErrConnectionClosed
 		case <-cancel:
 			return nil
 		case msg := <-msgs:

@@ -49,7 +49,7 @@ func main() {
 	mq := messaging.NewClient()
 
 	cancel := make(chan struct{})
-	mq.Subscribe(queueName, rateLimit, func(body []byte) {
+	err = mq.Subscribe(queueName, rateLimit, func(body []byte) {
 		// Sleep for 1 second to avoid rate limiting
 		start := time.Now()
 		defer func() {
@@ -82,6 +82,10 @@ func main() {
 		log.Printf("Created a post for feed %v\n%v", task.FeedID, string(payload))
 
 	}, cancel)
+
+	if err != nil {
+		log.Fatalf("Failed to subscribe to queue %v: %v", queueName, err)
+	}
 }
 
 func taskToDiscordPayload(task tasks.Task) DiscordWebhookPayload {
