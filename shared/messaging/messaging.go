@@ -13,22 +13,22 @@ var (
 	ErrConnectionClosed = errors.New("connection closed")
 )
 
-type client struct {
+type Client struct {
 	conn *amqp.Connection
 }
 
-func NewClient() *client {
-	return &client{}
+func NewClient() *Client {
+	return &Client{}
 }
 
-func (c *client) channel() (*amqp.Channel, error) {
+func (c *Client) channel() (*amqp.Channel, error) {
 	if c.conn == nil || c.conn.IsClosed() {
 		return nil, ErrConnectionClosed
 	}
 	return c.conn.Channel()
 }
 
-func (c *client) connect(queue string) error {
+func (c *Client) connect(queue string) error {
 	var err error
 	c.conn, err = amqp.Dial(helpers.MustGetEnv("RABBITMQ_URL"))
 	if err != nil {
@@ -56,11 +56,11 @@ func (c *client) connect(queue string) error {
 	return nil
 }
 
-func (c *client) close() {
+func (c *Client) close() {
 	c.conn.Close()
 }
 
-func (c *client) Publish(queue string, content ...[]byte) error {
+func (c *Client) Publish(queue string, content ...[]byte) error {
 	err := c.connect(queue)
 	if err != nil {
 		return err
@@ -98,7 +98,7 @@ func (c *client) Publish(queue string, content ...[]byte) error {
 	return nil
 }
 
-func (c *client) Subscribe(queue string, prefetch int, fn func(body []byte), cancel <-chan struct{}) error {
+func (c *Client) Subscribe(queue string, prefetch int, fn func(body []byte), cancel <-chan struct{}) error {
 	if prefetch == 0 {
 		prefetch = 1
 	}
